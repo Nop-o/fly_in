@@ -1,6 +1,6 @@
-class Parsing:
+class ValidateData:
     def __init__(self, file_name: str) -> None:
-        self.file_content: list[str] = Parsing.get_file_content(file_name)
+        self.file_content: list[str] = ValidateData.get_file_content(file_name)
 
     @staticmethod
     def get_file_content(file_name: str) -> list[str]:
@@ -10,7 +10,8 @@ class Parsing:
         file_content = [line.strip("\n") for line in content]
         return file_content
 
-    def verify_file_content(self) -> None:
+    def parse_file_content(self
+                           ) -> dict[str, list[str | dict[str, str]]]:
         possible_key: list[str] = [
             "nb_drones",
             "start_hub",
@@ -18,9 +19,15 @@ class Parsing:
             "hub",
             "connection",
         ]
-        zone_name: list[str] = []
+        zone_name: set[str] = set()
         first: int = 1
-
+        parsed_data: dict[str, list[str | dict[str, str]]] = {
+            "nb_drones": [],
+            "start_hub": [],
+            "end_hub": [],
+            "hub": [],
+            "connection": [],
+        }
         for i, line in enumerate(self.file_content):
             if not line or line[0] == "#":
                 continue
@@ -46,7 +53,7 @@ class Parsing:
 
             if key in ["nb_drones", "start_hub", "end_hub"]:
                 if key == "nb_drones" and first != 1:
-                    ValueError(
+                    raise ValueError(
                         "Wrong file input: the number of drone is not the "
                         f"first input (line {i})"
                     )
@@ -54,9 +61,11 @@ class Parsing:
             first = 0
 
             if key == "connection":
-                Parsing.verify_connection(zone_name, key, value, i)
+                parsed_data[key].append(ValidateData.verify_connection(zone_name, key, value, i))
             elif key != "nb_drones":
-                Parsing.verify_hubs(zone_name, key, value, i)
+                parsed_data[key].append(ValidateData.verify_hubs(zone_name, key, value, i))
+            else:
+                parsed_data[key].append(value.strip())
 
         possible_key.remove("hub")
         possible_key.remove("connection")
@@ -64,33 +73,40 @@ class Parsing:
             raise ValueError(
                 f"Wrong file input: missing {', '.join(possible_key)} key"
             )
+        return parsed_data
 
     @staticmethod
-    def verify_connection(zone_name: list[str], key: str,
-                          input: str, line: int) -> None:
-        if "-" not in input:
+    def verify_connection(zone_name: set[str], key: str,
+                          value: str, line: int
+                          ) -> list[str | dict[str, str]]:
+        connection: list[str | dict[str, str]] = []
+
+        if "-" not in value:
             raise ValueError(
                 "Wrong file input: missing a dashe for a connection "
                 f"format (line {line})"
             )
 
-        split_data = input.strip().split("-")
-        if (len(split_data) != 2):
+        split_data = value.strip().split("-")
+        if len(split_data) != 2:
             raise ValueError(
                 "Wrong file input: two many dashes in a connection "
                 f"(line {line})"
             )
 
         zone1, zone2 = split_data[0], split_data[1]
-        if " " in zone2:
+        if " " not in zone2:
+            connection.extend([zone1, zone2])
+        elif " " in zone2:
             split_metadata = zone2.split(" ")
             zone2, metadata = split_metadata[0], split_metadata[1]
-            if (len(split_metadata) != 2):
+            if len(split_metadata) != 2:
                 raise ValueError(
                     "Wrong file input: too many arguments for a connection "
                     f"(line {line})"
                 )
-            Parsing.verify_metadata(key, metadata, line)
+            connection.extend([zone1, zone2,
+                              ValidateData.verify_metadata(key, metadata, line)])
 
         if zone1 not in zone_name or zone2 not in zone_name:
             raise ValueError(
@@ -102,20 +118,24 @@ class Parsing:
                 "Wrong file input: a hub can't be connected to himself "
                 f"(line {line})"
             )
+        return connection
 
     @staticmethod
-    def verify_hubs(zone_name: list[str], key: str,
-                    input: str, line: int) -> None:
-        if " " not in input:
+    def verify_hubs(zone_name: set[str], key: str,
+                    value: str, line: int) -> list[str | dict[str, str]]:
+        hub: list[str | dict[str, str]] = []
+
+        if " " not in value:
             raise ValueError(
                 f"Wrong file input: not enough data given (line {line})"
             )
 
-        data = input.strip().split(" ", 3)
+        data = value.strip().split(" ", 3)
         name, x, y = data[0], data[1], data[2]
+        hub.extend([name, x, y])
         if len(data) == 4:
             metadata = data[3]
-            Parsing.verify_metadata(key, metadata, line)
+            hub.append(ValidateData.verify_metadata(key, metadata, line))
 
         if not name or (not x and x != '0') or (not y and y != '0'):
             raise ValueError(
@@ -131,10 +151,12 @@ class Parsing:
                 "Wrong file input: can't have duplicate zone name"
                 f"(line {line})"
             )
-        zone_name.append(name)
+        zone_name.add(name)
+        return hub
 
     @staticmethod
-    def verify_metadata(key: str, metadatas: str, line: int) -> None:
+    def verify_metadata(key: str, metadatas: str, line: int) -> dict[str, str]:
+        parsed_metadata: dict[str, str] = {}
         possible_key: list[str] = [
             "zone",
             "color",
@@ -169,13 +191,15 @@ class Parsing:
                 raise ValueError(
                     f"Wrong file input: empty metadata value (line {line})"
                 )
+            parsed_metadata[m_key] = m_value
             possible_key.remove(m_key)
-
+        return parsed_metadata
 
 def main() -> None:
     try:
-        file = Parsing("test.txt")
-        file.verify_file_content()
+        file_content: ValidateData = ValidateData("test.txt")
+        parsed_data = file_content.parse_file_content()
+        print(parsed_data)
     except Exception as e:
         print(e)
 
