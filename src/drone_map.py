@@ -43,10 +43,9 @@ class DroneMap(BaseModel):
     def verify_connection_duplicate(self) -> 'DroneMap':
         for i in range(0, len(self.connection)):
             for j in range(i + 1, len(self.connection)):
-                if ((self.connection[i].zone_1_name ==
-                   self.connection[j].zone_1_name) and
-                   (self.connection[i].zone_2_name ==
-                   self.connection[j].zone_2_name)):
+                zones_1 = [self.connection[i].zone_1_name, self.connection[i].zone_2_name]
+                zones_2 = [self.connection[j].zone_1_name, self.connection[j].zone_2_name]
+                if all(element in zones_1 for element in zones_2):
                     raise ValueError("Connection error: multiple connections "
                                      "are between "
                                      f"{self.connection[i].zone_1_name} and "

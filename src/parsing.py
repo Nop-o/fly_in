@@ -34,6 +34,8 @@ class ValidateData:
         for i, line in enumerate(self.file_content):
             if not line or line[0] == "#":
                 continue
+            if "#" in line:
+                line, comment = line.split("#", 1)
             if ":" not in line:
                 raise ValueError(
                     "Wrong file input: missing ':' " f"separator (line {i})"
