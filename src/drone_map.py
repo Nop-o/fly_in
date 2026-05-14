@@ -15,8 +15,11 @@ class DroneMap(BaseModel):
     def verify_hub_coordonates_duplicate(self) -> 'DroneMap':
         for i in range(0, len(self.hub)):
             for j in range(i + 1, len(self.hub)):
-                if self.hub[i].x == self.hub[j].x and self.hub[i].y == self.hub[j].y:
-                    raise ValueError(f"Hub error: hubs {self.hub[i].zone_name} and {self.hub[j].zone_name} have the same coordonates")
+                if (self.hub[i].x == self.hub[j].x and
+                   self.hub[i].y == self.hub[j].y):
+                    raise ValueError(f"Hub error: hubs {self.hub[i].zone_name}"
+                                     f" and {self.hub[j].zone_name} have the "
+                                     "same coordonates")
 
             if (self.start_hub.x == self.hub[i].x and
                self.start_hub.y == self.hub[i].y):
@@ -48,6 +51,16 @@ class DroneMap(BaseModel):
                                      "are between "
                                      f"{self.connection[i].zone_1_name} and "
                                      f"{self.connection[i].zone_2_name}")
+        return self
+
+    @model_validator(mode='after')
+    def verify_entry_exit_max_drones(self) -> 'DroneMap':
+        if self.nb_drones > self.start_hub.max_drones:
+            raise ValueError("Hub error: start hub can't support "
+                             f"{self.nb_drones} drones")
+        if self.nb_drones > self.end_hub.max_drones:
+            raise ValueError("Hub error: end hub can't support "
+                             f"{self.nb_drones} drones")
         return self
 
 

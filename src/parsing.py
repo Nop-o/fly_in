@@ -1,6 +1,4 @@
 from typing import Any
-from hub import Hub
-from connection import Connection
 
 
 class ValidateData:
@@ -77,11 +75,13 @@ class ValidateData:
                 )
             elif key == "hub":
                 parsed_data[key].append(
-                    ValidateData.verify_hub(zone_name, key, value, i)
+                    ValidateData.verify_hub(zone_name, key, value, i,
+                                            parsed_data["nb_drones"])
                 )
             elif key != "nb_drones":
-                parsed_data[key] = ValidateData.verify_hub(zone_name,
-                                                           key, value, i)
+                parsed_data[key] = ValidateData.verify_hub(
+                                        zone_name, key, value,
+                                        i, parsed_data["nb_drones"])
             else:
                 parsed_data[key] = value.strip()
 
@@ -125,7 +125,8 @@ class ValidateData:
                     "Wrong file input: too many arguments for a connection "
                     f"(line {line})"
                 )
-            connection.update(ValidateData.verify_metadata(key, metadata, line))
+            connection.update(ValidateData.verify_metadata(key, metadata,
+                                                           line))
         connection["zone_1_name"] = zone1
         connection["zone_2_name"] = zone2
 
@@ -143,7 +144,7 @@ class ValidateData:
 
     @staticmethod
     def verify_hub(
-        zone_name: set[str], key: str, value: str, line: int
+        zone_name: set[str], key: str, value: str, line: int, drone_count: int
     ) -> dict[str, str]:
         hub: dict[str, str] = {
             "zone_name": None,
@@ -162,13 +163,16 @@ class ValidateData:
             raise ValueError(
                 f"Wrong file input: not enough data given (line {line})"
             )
-            
+
         hub["zone_name"] = data[0]
         hub["x"] = data[1]
         hub["y"] = data[2]
         if len(data) == 4:
             metadata = data[3]
             hub.update(ValidateData.verify_metadata(key, metadata, line))
+
+        if not hub.get("max_drones") and key in ["start_hub", "end_hub"]:
+            hub["max_drones"] = drone_count
 
         if "-" in data[0]:
             raise ValueError(
