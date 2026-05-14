@@ -12,11 +12,11 @@ def main() -> None:
     try:
         connection = Connection(
             zone_1_name="zone1",
-            zone_1_name="zone2",
+            zone_2_name="zone2",
             max_link_capacity=2,
         )
     except ValidationError as e:
-        print(e.errors()[0]['msg'].replace("Value error, ", ""))
+        print(e.errors()[0]["msg"].replace("Value error, ", ""))
     except Exception as e:
         print(e)
 

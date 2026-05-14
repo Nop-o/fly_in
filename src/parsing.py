@@ -1,3 +1,8 @@
+from typing import Any
+from hub import Hub
+from connection import Connection
+
+
 class ValidateData:
     def __init__(self, file_name: str) -> None:
         self.file_content: list[str] = ValidateData.get_file_content(file_name)
@@ -10,8 +15,7 @@ class ValidateData:
         file_content = [line.strip("\n") for line in content]
         return file_content
 
-    def parse_file_content(self
-                           ) -> dict[str, list[str | dict[str, str]]]:
+    def parse_file_content(self) -> dict[str, Any]:
         possible_key: list[str] = [
             "nb_drones",
             "start_hub",
@@ -21,35 +25,42 @@ class ValidateData:
         ]
         zone_name: set[str] = set()
         first: int = 1
-        parsed_data: dict[str, list[str | dict[str, str]]] = {
-            "nb_drones": [],
-            "start_hub": [],
-            "end_hub": [],
+        parsed_data: dict[str, Any] = {
+            "nb_drones": 1,
+            "start_hub": None,
+            "end_hub": None,
             "hub": [],
             "connection": [],
         }
+
         for i, line in enumerate(self.file_content):
             if not line or line[0] == "#":
                 continue
             if ":" not in line:
-                raise ValueError("Wrong file input: missing ':' "
-                                 f"separator (line {i})")
+                raise ValueError(
+                    "Wrong file input: missing ':' " f"separator (line {i})"
+                )
 
             key, value = line.split(":", 1)
 
             if not key:
-                raise ValueError("Wrong file input: no key given "
-                                 f"(line {i})")
-            if not value.strip() and value != '0':
-                raise ValueError("Wrong file input: no value given "
-                                 f"(line {i})")
+                raise ValueError(
+                    "Wrong file input: no key given " f"(line {i})"
+                )
+            if not value.strip() and value != "0":
+                raise ValueError(
+                    "Wrong file input: no value given " f"(line {i})"
+                )
 
             if key not in possible_key:
                 if key in ["nb_drones", "start_hub", "end_hub"]:
-                    raise ValueError(f"Wrong file input: {key} already used "
-                                     f"(line {i})")
-                raise ValueError(f"Wrong file input: {key} is not a value "
-                                 f"key (line {i})")
+                    raise ValueError(
+                        f"Wrong file input: {key} already used " f"(line {i})"
+                    )
+                raise ValueError(
+                    f"Wrong file input: {key} is not a value "
+                    f"key (line {i})"
+                )
 
             if key in ["nb_drones", "start_hub", "end_hub"]:
                 if key == "nb_drones" and first != 1:
@@ -61,11 +72,18 @@ class ValidateData:
             first = 0
 
             if key == "connection":
-                parsed_data[key].append(ValidateData.verify_connection(zone_name, key, value, i))
+                parsed_data[key].append(
+                    ValidateData.verify_connection(zone_name, key, value, i)
+                )
+            elif key == "hub":
+                parsed_data[key].append(
+                    ValidateData.verify_hub(zone_name, key, value, i)
+                )
             elif key != "nb_drones":
-                parsed_data[key].append(ValidateData.verify_hubs(zone_name, key, value, i))
+                parsed_data[key] = ValidateData.verify_hub(zone_name,
+                                                           key, value, i)
             else:
-                parsed_data[key].append(value.strip())
+                parsed_data[key] = value.strip()
 
         possible_key.remove("hub")
         possible_key.remove("connection")
@@ -76,10 +94,14 @@ class ValidateData:
         return parsed_data
 
     @staticmethod
-    def verify_connection(zone_name: set[str], key: str,
-                          value: str, line: int
-                          ) -> list[str | dict[str, str]]:
-        connection: list[str | dict[str, str]] = []
+    def verify_connection(
+        zone_name: set[str], key: str, value: str, line: int
+    ) -> dict[str, str]:
+        connection: dict[str, str] = {
+            "zone_1_name": None,
+            "zone_2_name": None,
+            "max_link_capacity": None,
+        }
 
         if "-" not in value:
             raise ValueError(
@@ -95,9 +117,7 @@ class ValidateData:
             )
 
         zone1, zone2 = split_data[0], split_data[1]
-        if " " not in zone2:
-            connection.extend([zone1, zone2])
-        elif " " in zone2:
+        if " " in zone2:
             split_metadata = zone2.split(" ")
             zone2, metadata = split_metadata[0], split_metadata[1]
             if len(split_metadata) != 2:
@@ -105,8 +125,9 @@ class ValidateData:
                     "Wrong file input: too many arguments for a connection "
                     f"(line {line})"
                 )
-            connection.extend([zone1, zone2,
-                              ValidateData.verify_metadata(key, metadata, line)])
+            connection.update(ValidateData.verify_metadata(key, metadata, line))
+        connection["zone_1_name"] = zone1
+        connection["zone_2_name"] = zone2
 
         if zone1 not in zone_name or zone2 not in zone_name:
             raise ValueError(
@@ -121,9 +142,14 @@ class ValidateData:
         return connection
 
     @staticmethod
-    def verify_hubs(zone_name: set[str], key: str,
-                    value: str, line: int) -> list[str | dict[str, str]]:
-        hub: list[str | dict[str, str]] = []
+    def verify_hub(
+        zone_name: set[str], key: str, value: str, line: int
+    ) -> dict[str, str]:
+        hub: dict[str, str] = {
+            "zone_name": None,
+            "x": None,
+            "y": None,
+        }
 
         if " " not in value:
             raise ValueError(
@@ -131,27 +157,29 @@ class ValidateData:
             )
 
         data = value.strip().split(" ", 3)
-        name, x, y = data[0], data[1], data[2]
-        hub.extend([name, x, y])
-        if len(data) == 4:
-            metadata = data[3]
-            hub.append(ValidateData.verify_metadata(key, metadata, line))
-
-        if not name or (not x and x != '0') or (not y and y != '0'):
+        if (len(data) < 3 or not data[0] or (not data[1] and data[1] != "0") or
+           (not data[2] and data[2] != "0")):
             raise ValueError(
                 f"Wrong file input: not enough data given (line {line})"
             )
+            
+        hub["zone_name"] = data[0]
+        hub["x"] = data[1]
+        hub["y"] = data[2]
+        if len(data) == 4:
+            metadata = data[3]
+            hub.update(ValidateData.verify_metadata(key, metadata, line))
 
-        if "-" in name:
+        if "-" in data[0]:
             raise ValueError(
                 f"Wrong file input: name can't have dashes (line {line})"
             )
-        if name in zone_name:
+        if data[0] in zone_name:
             raise ValueError(
                 "Wrong file input: can't have duplicate zone name"
                 f"(line {line})"
             )
-        zone_name.add(name)
+        zone_name.add(data[0])
         return hub
 
     @staticmethod
@@ -168,7 +196,7 @@ class ValidateData:
                 f"Wrong file input: wrong metadata format (line {line})"
             )
 
-        list_metadata = metadatas[1: -1].split(" ")
+        list_metadata = metadatas[1:-1].split(" ")
         for metadata in list_metadata:
             if not metadata or "=" not in metadata:
                 raise ValueError(
@@ -181,8 +209,9 @@ class ValidateData:
                     f"Wrong file input: {key} metadata key is not valid "
                     f"(line {line})"
                 )
-            if ((m_key == "max_link_capacity" and key != "connection") or
-               (m_key != "max_link_capacity" and key == "connection")):
+            if (m_key == "max_link_capacity" and key != "connection") or (
+                m_key != "max_link_capacity" and key == "connection"
+            ):
                 raise ValueError(
                     f"Wrong file input: a {key} doesn't have access to {m_key}"
                     f" metadata (line {line})"
@@ -195,11 +224,16 @@ class ValidateData:
             possible_key.remove(m_key)
         return parsed_metadata
 
+
 def main() -> None:
     try:
         file_content: ValidateData = ValidateData("test.txt")
         parsed_data = file_content.parse_file_content()
-        print(parsed_data)
+        print(parsed_data["nb_drones"])
+        print(parsed_data["start_hub"])
+        print(parsed_data["end_hub"])
+        print(parsed_data["hub"])
+        print(parsed_data["connection"])
     except Exception as e:
         print(e)
 
