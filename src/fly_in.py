@@ -1,5 +1,6 @@
 from parsing import ValidateData
 from drone_map import DroneMap
+from drone import Drone
 from pydantic import ValidationError
 
 
@@ -8,12 +9,8 @@ def main() -> None:
         file_content: ValidateData = ValidateData("test.txt")
         parsed_data = file_content.parse_file_content()
         drone_map = DroneMap(**parsed_data)
-        print("\n\n")
-        print(drone_map.nb_drones)
-        print(drone_map.start_hub)
-        print(drone_map.end_hub)
-        print(drone_map.hub)
-        print(drone_map.connection)
+        drones = Drone.drone_factory(drone_map.nb_drones)
+        print(drones[0].id)
     except ValidationError as e:
         print(e.errors()[0]['msg'].replace("Value error, ", ""))
     except Exception as e:
