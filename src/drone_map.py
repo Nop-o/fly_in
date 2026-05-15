@@ -1,10 +1,13 @@
+from __future__ import annotations
 from pydantic import BaseModel, Field, ValidationError, model_validator
+from typing import Optional
+from drone import Drone
 from hub import Hub
 from connection import Connection
-from typing import Optional
 
 
 class DroneMap(BaseModel):
+
     nb_drones: int = Field(ge=1)
     start_hub: Hub
     end_hub: Hub
@@ -12,7 +15,7 @@ class DroneMap(BaseModel):
     connection: Optional[list[Connection]]
 
     @model_validator(mode='after')
-    def verify_hub_coordonates_duplicate(self) -> 'DroneMap':
+    def verify_hub_coordonates_duplicate(self) -> DroneMap:
         for i in range(0, len(self.hub)):
             for j in range(i + 1, len(self.hub)):
                 if (self.hub[i].x == self.hub[j].x and
@@ -40,7 +43,7 @@ class DroneMap(BaseModel):
         return self
 
     @model_validator(mode='after')
-    def verify_connection_duplicate(self) -> 'DroneMap':
+    def verify_connection_duplicate(self) -> DroneMap:
         for i in range(0, len(self.connection)):
             for j in range(i + 1, len(self.connection)):
                 zones_1 = [self.connection[i].zone_1_name, self.connection[i].zone_2_name]
@@ -53,7 +56,7 @@ class DroneMap(BaseModel):
         return self
 
     @model_validator(mode='after')
-    def verify_entry_exit_max_drones(self) -> 'DroneMap':
+    def verify_entry_exit_max_drones(self) -> DroneMap:
         if self.nb_drones > self.start_hub.max_drones:
             raise ValueError("Hub error: start hub can't support "
                              f"{self.nb_drones} drones")
@@ -62,6 +65,29 @@ class DroneMap(BaseModel):
                              f"{self.nb_drones} drones")
         return self
 
+    def update_hub_connections(self) -> None:
+        for hub in self.hub:
+            connections = []
+            for connection in DroneMap.connection:
+                if hub.zone_name == connection.zone_1_name:
+                    connections.append(connection.zone_2_name)
+                elif hub.zone_name == connection.zone_2_name:
+                    connections.append(connection.zone_1_name)
+
+            hub.update_hub_connection(connections)
+            
+        
+
+    def update_all_hub_connections(self) -> None:
+        for hub in self.hub:
+            hub.update_hub_connections(self)
+    
+    def create_drones(self) -> None:
+        self.drones = Drone.drone_factory(self.nb_drones)
+
+    def update_all_solution(self) -> None:
+        for drone in self.drones:
+            drones.get_path_solution(drone.id)
 
 def main() -> None:
     try:
@@ -72,7 +98,7 @@ def main() -> None:
                 zone_name="start",
                 x=0,
                 y=0,
-                zone="normal",
+                zone_type="normal",
                 color="red",
                 max_drones=50,
             ),
@@ -81,7 +107,7 @@ def main() -> None:
                 zone_name="goal",
                 x=1,
                 y=1,
-                zone="normal",
+                zone_type="normal",
                 color="red",
                 max_drones=50,
             ),
@@ -90,7 +116,7 @@ def main() -> None:
                 zone_name="hub1",
                 x=0,
                 y=1,
-                zone="normal",
+                zone_type="normal",
                 color="red",
                 max_drones=50,
             ),

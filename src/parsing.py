@@ -152,6 +152,8 @@ class ValidateData:
             "zone_name": None,
             "x": None,
             "y": None,
+            "zone_type": "normal",
+            "color": None,
         }
 
         if " " not in value:
@@ -173,8 +175,11 @@ class ValidateData:
             metadata = data[3]
             hub.update(ValidateData.verify_metadata(key, metadata, line))
 
-        if not hub.get("max_drones") and key in ["start_hub", "end_hub"]:
-            hub["max_drones"] = drone_count
+        if not hub.get("max_drones"):
+            if key in ["start_hub", "end_hub"]:
+                hub["max_drones"] = drone_count
+            else:
+                hub["max_drones"] = 1
 
         if "-" in data[0]:
             raise ValueError(
@@ -226,8 +231,12 @@ class ValidateData:
                 raise ValueError(
                     f"Wrong file input: empty metadata value (line {line})"
                 )
-            parsed_metadata[m_key] = m_value
-            possible_key.remove(m_key)
+            if m_key == "zone":
+                parsed_metadata["zone_type"] = m_value
+                possible_key.remove("zone")
+            else:
+                parsed_metadata[m_key] = m_value
+                possible_key.remove(m_key)
         return parsed_metadata
 
 
