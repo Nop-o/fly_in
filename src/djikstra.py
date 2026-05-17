@@ -8,7 +8,7 @@ class Djikstra:
         self.entry = entry
         self.exit = exit
         self.unvisited_hub = unvisited_hub
-    
+
     def find_shortest_path(self, id: int) -> list[Hub]:
         pass
 
@@ -16,9 +16,9 @@ class Djikstra:
         hub_choice: Hub = None
 
         for hub in current_hub.connections:
-            if hub in unvisited_hub:
+            if hub in self.unvisited_hub:
                 if not hub_choice:
-                    hub_choice = unvisited_hub
+                    hub_choice = hub
                 else:
                     hub_choice = Djikstra.find_priority_hub(hub_choice, hub)
 
@@ -26,7 +26,7 @@ class Djikstra:
             return None
         return hub_choice
 
-    @static_method
+    @staticmethod
     def find_priority_hub(hub_1, hub_2) -> Hub:
         if hub_1.zone_type == ZoneType.PRIORITY:
             return hub_1

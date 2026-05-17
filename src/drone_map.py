@@ -46,8 +46,10 @@ class DroneMap(BaseModel):
     def verify_connection_duplicate(self) -> DroneMap:
         for i in range(0, len(self.connection)):
             for j in range(i + 1, len(self.connection)):
-                zones_1 = [self.connection[i].zone_1_name, self.connection[i].zone_2_name]
-                zones_2 = [self.connection[j].zone_1_name, self.connection[j].zone_2_name]
+                zones_1 = [self.connection[i].zone_1_name,
+                           self.connection[i].zone_2_name]
+                zones_2 = [self.connection[j].zone_1_name,
+                           self.connection[j].zone_2_name]
                 if all(element in zones_1 for element in zones_2):
                     raise ValueError("Connection error: multiple connections "
                                      "are between "
@@ -75,19 +77,48 @@ class DroneMap(BaseModel):
                     connections.append(connection.zone_1_name)
 
             hub.update_hub_connection(connections)
-            
-        
 
     def update_all_hub_connections(self) -> None:
         for hub in self.hub:
             hub.update_hub_connections(self)
-    
+
     def create_drones(self) -> None:
         self.drones = Drone.drone_factory(self.nb_drones)
 
     def update_all_solution(self) -> None:
         for drone in self.drones:
-            drones.get_path_solution(drone.id)
+            drone.get_path_solution(drone.id)
+
+    def simulate_turn(self) -> None:
+        for drone in self.drones:
+            drone.simulate_turn()
+
+    def simulate_reverse_turn(self) -> None:
+        for drone in self.drones:
+            drone.simulate_reverse_turn()
+    
+    def visual_simulation(self) -> None:
+        import pygame
+        
+        pygame.init()
+        screen = pygame.display.set_mode((800, 600))
+        clock = pygame.time.Clock()
+
+        running = True
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+            
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_LEFT]:
+                self.simulate_reverse_turn()
+            if keys[pygame.K_RIGHT]:
+                self.simulate_turn()
+            
+            pygame.display.flip()
+            clock.tick(60)
+
 
 def main() -> None:
     try:

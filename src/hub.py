@@ -3,7 +3,8 @@ from typing import Any
 from connection import Connection
 from zone_type import ZoneType
 
-class Hub(BaseModel):  
+
+class Hub(BaseModel):
 
     zone_name: str = Field(min_length=3, max_length=20)
     x: int = Field(ge=0)
@@ -27,9 +28,9 @@ class Hub(BaseModel):
             data["zone_type"] = ZoneType.PRIORITY
         else:
             raise ValueError("Hub error: impossible zone type for "
-                                f"{data['zone_name']}")
+                             f"{data['zone_name']}")
         return data
-    
+
     def update_hub_connection(self, connections: list[Connection]) -> None:
         self.connections = connections
 
