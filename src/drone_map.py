@@ -67,20 +67,25 @@ class DroneMap(BaseModel):
                              f"{self.nb_drones} drones")
         return self
 
-    def update_hub_connections(self) -> None:
+    def update_all_connected_hub(self) -> None:
         for hub in self.hub:
-            connections = []
+            hub.update_hub_connected_hub(self)
+
+    def update_connected_hub(self) -> None:
+        for hub in self.hub:
+            connected_hub: list[Hub] = []
             for connection in DroneMap.connection:
                 if hub.zone_name == connection.zone_1_name:
-                    connections.append(connection.zone_2_name)
-                elif hub.zone_name == connection.zone_2_name:
-                    connections.append(connection.zone_1_name)
+                    connected_hub.append(get_hub(connection.zone_2_name))
+                else:
+                    connected_hub.append(get_hub(connection.zone_1_name))
 
-            hub.update_hub_connection(connections)
-
-    def update_all_hub_connections(self) -> None:
+            hub.update_hub_connection(connected_hub)
+    
+    def get_hub(self, hub_name: str) -> Hub:
         for hub in self.hub:
-            hub.update_hub_connections(self)
+            if hub_name == hub.zone_name:
+                return hub
 
     def create_drones(self) -> None:
         self.drones = Drone.drone_factory(self.nb_drones)

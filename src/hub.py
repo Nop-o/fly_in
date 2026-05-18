@@ -31,8 +31,21 @@ class Hub(BaseModel):
                              f"{data['zone_name']}")
         return data
 
-    def update_hub_connection(self, connections: list[Connection]) -> None:
+    def update_hub_connection(self, connections: list[Hub]) -> None:
         self.connections = connections
+    
+    def set_drone_capacity_per_turn(self, turn: int, capacity: int) -> None:
+        if (self.turn_capacity[turn] and
+        self.max_drones > self.turn_capacity[turn]):
+            self.turn_capacity[turn] += 1
+        elif not self.turn_capacity[turn] and self.max_drones > 0:
+            self.turn_capacity[turn] = 1
+    
+    def get_drone_capacity_per_turn(self, turn: int) -> int:
+        if not self.turn_capacity[turn]:
+            return self.max_drones
+        else:
+            return self.turn_capacity[turn] 
 
 
 def main() -> None:
