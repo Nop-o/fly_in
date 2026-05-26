@@ -1,5 +1,5 @@
 from __future__ import annotations
-from djikstra import Djikstra
+from djkstra import Dijkstra
 
 
 class Drone:
@@ -12,7 +12,7 @@ class Drone:
         Call the Dijkstra algrithm to find the shortest path 
         between the entry and the exit.
         """
-        self.solution = Djikstra.find_shortest_path(self.id).reverse()
+        self.solution = Dijkstra.find_shortest_path(self.id).reverse()
 
     def simulate_turn(self) -> None:
         """
