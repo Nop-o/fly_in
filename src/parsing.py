@@ -7,6 +7,7 @@ class ValidateData:
 
     @staticmethod
     def get_file_content(file_name: str) -> list[str]:
+        """Open the file given in argument and retriewe it's content"""
         with open(file_name, "r") as file:
             content = file.readlines()
 
@@ -14,6 +15,11 @@ class ValidateData:
         return file_content
 
     def parse_file_content(self) -> dict[str, Any]:
+        """
+        Verify if the retriewed data is in the food format and useable.
+        Return a dict that will be used to create a drone map wich contains 
+        hubs and connections who will be created at the same time as the map.
+        """
         possible_key: list[str] = [
             "nb_drones",
             "start_hub",
@@ -99,6 +105,7 @@ class ValidateData:
     def verify_connection(
         zone_name: set[str], key: str, value: str, line: int
     ) -> dict[str, str]:
+        """Verify that the possible connection is valid."""
         connection: dict[str, str] = {
             "zone_1_name": None,
             "zone_2_name": None,
@@ -148,6 +155,7 @@ class ValidateData:
     def verify_hub(
         zone_name: set[str], key: str, value: str, line: int, drone_count: int
     ) -> dict[str, str]:
+        """Verify that the possible hub is valid."""
         hub: dict[str, str] = {
             "zone_name": None,
             "x": None,
@@ -195,6 +203,7 @@ class ValidateData:
 
     @staticmethod
     def verify_metadata(key: str, metadatas: str, line: int) -> dict[str, str]:
+        """Verify that the possible metadata is valid."""
         parsed_metadata: dict[str, str] = {}
         possible_key: list[str] = [
             "zone",

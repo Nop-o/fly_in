@@ -16,6 +16,7 @@ class Hub(BaseModel):
     @model_validator(mode='before')
     @classmethod
     def update_zone(cls, data: dict[str, Any]) -> dict[str, Any]:
+        """Update the hub zone type"""
         if not data.get("zone_type"):
             data["zone_type"] = ZoneType.NORMAL
         elif data["zone_type"] == "normal":
@@ -32,16 +33,18 @@ class Hub(BaseModel):
         return data
 
     def update_hub_connection(self, connections: list[Hub]) -> None:
+        """Update the hub links to other hubs"""
         self.connections = connections
     
     def set_drone_capacity_per_turn(self, turn: int, capacity: int) -> None:
-        if (self.turn_capacity[turn] and
-        self.max_drones > self.turn_capacity[turn]):
+        """Update or set the hub turn drone capacity"""
+        if self.turn_capacity[turn]:
             self.turn_capacity[turn] += 1
-        elif not self.turn_capacity[turn] and self.max_drones > 0:
+        else:
             self.turn_capacity[turn] = 1
     
     def get_drone_capacity_per_turn(self, turn: int) -> int:
+        """Get the hub turn drone capacity"""
         if not self.turn_capacity[turn]:
             return self.max_drones
         else:
