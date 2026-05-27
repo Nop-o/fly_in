@@ -36,7 +36,7 @@ class Hub(BaseModel):
         """Update the hub links to other hubs"""
         self.connections = connections
     
-    def set_drone_capacity_per_turn(self, turn: int, capacity: int) -> None:
+    def set_drone_capacity_per_turn(self, turn: int) -> None:
         """Update or set the hub turn drone capacity"""
         if self.turn_capacity[turn]:
             self.turn_capacity[turn] += 1
