@@ -33,7 +33,7 @@ class ValidateData:
             "nb_drones": 1,
             "start_hub": None,
             "end_hub": None,
-            "hub": [],
+            "hub": {},
             "connection": [],
         }
 
@@ -82,7 +82,7 @@ class ValidateData:
                     ValidateData.verify_connection(zone_name, key, value, i)
                 )
             elif key == "hub":
-                parsed_data[key].append(
+                parsed_data[zone_name] = (
                     ValidateData.verify_hub(zone_name, key, value, i,
                                             parsed_data["nb_drones"])
                 )

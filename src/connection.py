@@ -5,6 +5,20 @@ class Connection(BaseModel):
     zone_1_name: str = Field(min_length=3, max_length=20)
     zone_2_name: str = Field(min_length=3, max_length=20)
     max_link_capacity: int = Field(default=1, ge=0)
+    
+    def set_current_connection_capacity_per_turn(self, turn: int) -> None:
+        """Update/set the number of drone on the connection at a given turn"""
+        if self.turn_capacity[turn]:
+            self.turn_capacity[turn] += 1
+        else:
+            self.turn_capacity[turn] = 1
+    
+    def get_current_connection_capacity_per_turn(self, turn: int) -> int:
+        """Get the number of drone on the connection at a given turn"""
+        if not self.turn_capacity[turn]:
+            return 0
+        else:
+            return self.turn_capacity[turn] 
 
 
 def main() -> None:

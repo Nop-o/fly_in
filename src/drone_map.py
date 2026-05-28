@@ -11,7 +11,7 @@ class DroneMap(BaseModel):
     nb_drones: int = Field(ge=1)
     start_hub: Hub
     end_hub: Hub
-    hub: Optional[list[Hub]]
+    hub: Optional[dict[dict[str, Hub]]]
     connection: Optional[list[Connection]]
 
     @model_validator(mode='after')
@@ -71,27 +71,11 @@ class DroneMap(BaseModel):
         return self
 
     def update_all_connected_hub(self) -> None:
-        """Link all hubs based on their connections"""
+        """Connect all hubs based on their connexions"""
         for hub in self.hub:
-            hub.update_hub_connected_hub(self)
-
-    def update_connected_hub(self) -> None:
-        """Link one hubs based on his connections"""
-        for hub in self.hub:
-            connected_hub: list[Hub] = []
             for connection in DroneMap.connection:
                 if hub.zone_name == connection.zone_1_name:
-                    connected_hub.append(get_hub(connection.zone_2_name))
-                else:
-                    connected_hub.append(get_hub(connection.zone_1_name))
-
-            hub.update_hub_connection(connected_hub)
-    
-    def get_hub(self, hub_name: str) -> Hub:
-        """Get an hub based on his zone_name"""
-        for hub in self.hub:
-            if hub_name == hub.zone_name:
-                return hub
+                    hub["connexions"][connection.zone_2_name] = connection.max_link_capacity
 
     def create_drones(self) -> None:
         """Call the drone factory to create the drones"""

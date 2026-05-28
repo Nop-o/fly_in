@@ -12,7 +12,7 @@ class Drone:
         Call the Dijkstra algrithm to find the shortest path 
         between the entry and the exit.
         """
-        self.solution = Dijkstra.find_shortest_path(self.id).reverse()
+        self.solution = Dijkstra.find_shortest_path(self.id)
 
     def simulate_turn(self) -> None:
         """
@@ -58,7 +58,7 @@ class Drone:
 def main() -> None:
     try:
         drone = Drone(id=1)
-        print(drone.id)
+        drone.get_path_solution()
     except Exception as e:
         print(e)
 

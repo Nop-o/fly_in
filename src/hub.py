@@ -31,22 +31,18 @@ class Hub(BaseModel):
             raise ValueError("Hub error: impossible zone type for "
                              f"{data['zone_name']}")
         return data
-
-    def update_hub_connection(self, connections: list[Hub]) -> None:
-        """Update the hub links to other hubs"""
-        self.connections = connections
     
-    def set_drone_capacity_per_turn(self, turn: int) -> None:
-        """Update or set the hub turn drone capacity"""
+    def set_current_drone_capacity_per_turn(self, turn: int) -> None:
+        """Update/set the number of drone on the hub at a given turn"""
         if self.turn_capacity[turn]:
             self.turn_capacity[turn] += 1
         else:
             self.turn_capacity[turn] = 1
     
-    def get_drone_capacity_per_turn(self, turn: int) -> int:
-        """Get the hub turn drone capacity"""
+    def get_current_drone_capacity_per_turn(self, turn: int) -> int:
+        """Get the number of drone on the hub at a given turn"""
         if not self.turn_capacity[turn]:
-            return self.max_drones
+            return 0
         else:
             return self.turn_capacity[turn] 
 
