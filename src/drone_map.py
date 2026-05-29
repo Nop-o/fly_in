@@ -70,12 +70,12 @@ class DroneMap(BaseModel):
                              f"{self.nb_drones} drones")
         return self
 
+    @model_validator(mode='after')
     def update_all_connected_hub(self) -> None:
-        """Connect all hubs based on their connexions"""
-        for hub in self.hub:
-            for connection in DroneMap.connection:
-                if hub.zone_name == connection.zone_1_name:
-                    hub["connexions"][connection.zone_2_name] = connection.max_link_capacity
+        """Connect all hubs based on their connections"""
+        for connection in DroneMap.connection:
+            self.hub[connection.zone_1_name]["connections"] = {
+                connection.zone_2_name: connection}
 
     def create_drones(self) -> None:
         """Call the drone factory to create the drones"""

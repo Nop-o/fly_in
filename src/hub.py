@@ -44,7 +44,15 @@ class Hub(BaseModel):
         if not self.turn_capacity[turn]:
             return 0
         else:
-            return self.turn_capacity[turn] 
+            return self.turn_capacity[turn]
+    
+    #def add_connection(self, connection: 'Connection') -> None:
+    #    if not self.connection:
+    #        self.connection: list[connection] = []
+    #    self.connections.append(connection)
+
+    #def get_neighbors(self) -> List['Connection']:
+    #    return self.connections
 
 
 def main() -> None:

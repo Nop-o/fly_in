@@ -1,6 +1,7 @@
 from hub import Hub
 from zone_type import ZoneType
 from typing import Any
+from connection import Connection
 
 
 class Dijkstra:
@@ -51,13 +52,15 @@ class Dijkstra:
 
         turn += 1
 
-        for next_hub in current_hub.connections:
-            while (not Dijkstra.is_connection_free(next_hub, turn)
-               or not Dijkstra.is_hub_free(next_hub, turn)):
+        for next_hub in current_hub["connections"].keys():
+            while ((not Dijkstra.is_connection_free(current_hub,
+                                                    next_hub, turn)
+               or not Dijkstra.is_hub_free(hub[next_hub], turn))
+               and solution["score"] < self.score):
                 solution["path"].append(current_hub)
                 solution["score"] += 1
                 turn += 1
-            self.find_all_solutions(solution, next_hub, turn, score)
+            self.find_all_solutions(solution, hub[next_hub], turn, score)
 
         solution.pop()
 
@@ -80,12 +83,17 @@ class Dijkstra:
                 return
             elif (new_solution["path"][i].zone_type == ZoneType.PRIORITY
                and self.solution["path"][i].zone_type != ZoneType.PRIORITY):
+                self.solution = new_solution
                 return
         self.solution = tie_breaker
 
     @staticmethod
-    def is_connection_free(hub: Hub, connexion: str, turn: int) -> bool:
-        if hub["connexions"][] #fix this
+    def is_connection_free(hub: Hub, next_hub: str, turn: int) -> bool:
+        if (hub["connections"][next_hub].max_link_capacity <=
+        hub["connections"][next_hub].get_current_connection_capacity_per_turn(
+           turn)):
+            return False
+        return True
 
     @staticmethod
     def is_hub_free(hub: Hub, turn: int) -> bool:
