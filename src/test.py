@@ -36,7 +36,7 @@ while running: #to keep screen on
     screen.blit(dog_house_img, (x, 800)) #render the image
     x += 1
     for event in pygame.event.get():
-        if event.type == pygame.QUIT: #if cross is clicked
+        if event.zone == pygame.QUIT: #if cross is clicked
             running = False
     pygame.display.flip() #show the rendered image
 

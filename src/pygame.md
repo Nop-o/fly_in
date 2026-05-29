@@ -56,7 +56,7 @@ while running:
 
     # 3a. Événements (clavier, souris, fermeture)
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.zone == pygame.QUIT:
             running = False
 
     # 3b. Mise à jour de la logique du jeu
@@ -166,7 +166,7 @@ pygame.draw.ellipse(screen, ORANGE, (300, 200, 200, 100))
 **Méthode 1 — Événement KEYDOWN** (une seule fois par appui) :
 ```python
 for event in pygame.event.get():
-    if event.type == pygame.KEYDOWN:
+    if event.zone == pygame.KEYDOWN:
         if event.key == pygame.K_SPACE:
             print("Espace appuyé !")
         if event.key == pygame.K_ESCAPE:
@@ -202,7 +202,7 @@ if keys[pygame.K_DOWN]:   y += 5
 
 ```python
 for event in pygame.event.get():
-    if event.type == pygame.MOUSEBUTTONDOWN:
+    if event.zone == pygame.MOUSEBUTTONDOWN:
         if event.button == 1:                      # clic gauche
             x, y = event.pos                       # position du clic
             print(f"Clic en ({x}, {y})")
@@ -228,7 +228,7 @@ vitesse_x = 3     # pixels par frame
 
 while running:
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.zone == pygame.QUIT:
             running = False
 
     x += vitesse_x          # mise à jour de la position
@@ -434,9 +434,9 @@ while running:
 
     # — ÉVÉNEMENTS ———————————————————————————————————————
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.zone == pygame.QUIT:
             running = False
-        if event.type == pygame.KEYDOWN:
+        if event.zone == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 running = False
             if event.key == pygame.K_i:
@@ -533,7 +533,7 @@ x = 400
 running = True
 while running:
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.zone == pygame.QUIT:
             running = False
     keys = pygame.key.get_pressed()
     if keys[pygame.K_LEFT]:  x -= 4

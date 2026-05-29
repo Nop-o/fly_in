@@ -1,5 +1,5 @@
 from __future__ import annotations
-from djkstra import Dijkstra
+from dijkstra import Dijkstra
 
 
 class Drone:

@@ -16,8 +16,8 @@ class ValidateData:
 
     def parse_file_content(self) -> dict[str, Any]:
         """
-        Verify if the retriewed data is in the food format and useable.
-        Return a dict that will be used to create a drone map wich contains 
+        Verify if the retrieved data is in the food format and useable.
+        Return a dict that will be used to create a drone map which contains 
         hubs and connections who will be created at the same time as the map.
         """
         possible_key: list[str] = [
@@ -28,9 +28,10 @@ class ValidateData:
             "connection",
         ]
         zone_name: set[str] = set()
-        first: int = 1
+        coordinates: set[tuple[str, str]] = set()
+        is_first: bool = True
         parsed_data: dict[str, Any] = {
-            "nb_drones": 1,
+            "nb_drones": '1',
             "start_hub": None,
             "end_hub": None,
             "hub": {},
@@ -69,29 +70,29 @@ class ValidateData:
                 )
 
             if key in ["nb_drones", "start_hub", "end_hub"]:
-                if key == "nb_drones" and first != 1:
+                possible_key.remove(key)
+                if key == "nb_drones" and not is_first:
                     raise ValueError(
                         "Wrong file input: the number of drone is not the "
                         f"first input (line {i})"
                     )
-                possible_key.remove(key)
-            first = 0
+            is_first = False
 
             if key == "connection":
                 parsed_data[key].append(
-                    ValidateData.verify_connection(zone_name, key, value, i)
+                    ValidateData.verify_connection(zone_name, value, i)
                 )
             elif key == "hub":
-                parsed_data[zone_name] = (
-                    ValidateData.verify_hub(zone_name, key, value, i,
-                                            parsed_data["nb_drones"])
-                )
-            elif key != "nb_drones":
-                parsed_data[key] = ValidateData.verify_hub(
-                                        zone_name, key, value,
-                                        i, parsed_data["nb_drones"])
-            else:
+                new_hub = ValidateData.verify_hub(zone_name, coordinates,
+                                                  key, value, i,
+                                                  parsed_data["nb_drones"])
+                parsed_data[key][new_hub["name"]] = new_hub
+            elif key == "nb_drones":
                 parsed_data[key] = value.strip()
+            else:
+                parsed_data[key] = ValidateData.verify_hub(
+                                        zone_name, coordinates, key, value,
+                                        i, parsed_data["nb_drones"])
 
         possible_key.remove("hub")
         possible_key.remove("connection")
@@ -103,7 +104,7 @@ class ValidateData:
 
     @staticmethod
     def verify_connection(
-        zone_name: set[str], key: str, value: str, line: int
+        zone_name: set[str], value: str, line: int
     ) -> dict[str, str]:
         """Verify that the possible connection is valid."""
         connection: dict[str, str] = {
@@ -128,20 +129,20 @@ class ValidateData:
         zone1, zone2 = split_data[0], split_data[1]
         if " " in zone2:
             split_metadata = zone2.split(" ")
-            zone2, metadata = split_metadata[0], split_metadata[1]
             if len(split_metadata) != 2:
                 raise ValueError(
                     "Wrong file input: too many arguments for a connection "
                     f"(line {line})"
                 )
-            connection.update(ValidateData.verify_metadata(key, metadata,
+            zone2, metadata = split_metadata[0], split_metadata[1]
+            connection.update(ValidateData.verify_metadata("connection", metadata,
                                                            line))
         connection["zone_1_name"] = zone1
         connection["zone_2_name"] = zone2
 
         if zone1 not in zone_name or zone2 not in zone_name:
             raise ValueError(
-                "Wrong file input: a hub needs to exist before connecting "
+                "Wrong file input: a hub needs to exist before connecting it "
                 f"(line {line})"
             )
         if zone1 == zone2:
@@ -153,15 +154,15 @@ class ValidateData:
 
     @staticmethod
     def verify_hub(
-        zone_name: set[str], key: str, value: str, line: int, drone_count: int
+        zone_name: set[str], coordinates: set[tuple[str, str]], key: str, value: str, line: int, drone_count: str
     ) -> dict[str, str]:
         """Verify that the possible hub is valid."""
         hub: dict[str, str] = {
-            "zone_name": None,
-            "x": None,
-            "y": None,
-            "zone_type": "normal",
+            "name": None,
+            "coordinates": None,
+            "zone": "normal",
             "color": None,
+            "neighbors": [],
         }
 
         if " " not in value:
@@ -176,29 +177,33 @@ class ValidateData:
                 f"Wrong file input: not enough data given (line {line})"
             )
 
-        hub["zone_name"] = data[0]
-        hub["x"] = data[1]
-        hub["y"] = data[2]
+        hub["name"] = data[0]
+        hub["coordinates"] = (data[1], data[2])
         if len(data) == 4:
             metadata = data[3]
             hub.update(ValidateData.verify_metadata(key, metadata, line))
 
-        if not hub.get("max_drones"):
-            if key in ["start_hub", "end_hub"]:
-                hub["max_drones"] = drone_count
-            else:
-                hub["max_drones"] = 1
+        if key in ["start_hub", "end_hub"]:
+            hub["max_drones"] = drone_count
+        else:
+            hub["max_drones"] = hub.get("max_drones", '1')
 
         if "-" in data[0]:
             raise ValueError(
                 f"Wrong file input: name can't have dashes (line {line})"
             )
-        if data[0] in zone_name:
+        if hub["name"] in zone_name:
             raise ValueError(
                 "Wrong file input: can't have duplicate zone name"
                 f"(line {line})"
             )
-        zone_name.add(data[0])
+        if hub["coordinates"] in coordinates:
+            raise ValueError(
+                "Wrong file input: can't have duplicate coordinates"
+                f"(line {line})"
+            )
+        zone_name.add(hub["name"])
+        coordinates.add(hub["coordinates"])
         return hub
 
     @staticmethod
@@ -240,12 +245,9 @@ class ValidateData:
                 raise ValueError(
                     f"Wrong file input: empty metadata value (line {line})"
                 )
-            if m_key == "zone":
-                parsed_metadata["zone_type"] = m_value
-                possible_key.remove("zone")
-            else:
-                parsed_metadata[m_key] = m_value
-                possible_key.remove(m_key)
+
+            parsed_metadata[m_key] = m_value
+            possible_key.remove(m_key)
         return parsed_metadata
 
 

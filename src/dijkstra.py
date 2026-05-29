@@ -31,12 +31,12 @@ class Dijkstra:
             - the weight is the time cost the reach that point
             - it finds the shortest path between two points with a weighted map
         """
-        if not current_hub or current_hub.zone_type == ZoneType.BLOCKED:
+        if not current_hub or current_hub.zone == ZoneType.BLOCKED:
             return
 
         solution["path"].append(current_hub)
 
-        if current_hub.zone_type == ZoneType.RESTRICTED:
+        if current_hub.zone == ZoneType.RESTRICTED:
             solution["score"] += 2
         else:
             solution["score"] += 1
@@ -78,11 +78,11 @@ class Dijkstra:
             tie_breaker = self.solution
 
         for i in range(min_length):
-            if (self.solution["path"][i].zone_type == ZoneType.PRIORITY
-               and new_solution["path"][i].zone_type != ZoneType.PRIORITY):
+            if (self.solution["path"][i].zone == ZoneType.PRIORITY
+               and new_solution["path"][i].zone != ZoneType.PRIORITY):
                 return
-            elif (new_solution["path"][i].zone_type == ZoneType.PRIORITY
-               and self.solution["path"][i].zone_type != ZoneType.PRIORITY):
+            elif (new_solution["path"][i].zone == ZoneType.PRIORITY
+               and self.solution["path"][i].zone != ZoneType.PRIORITY):
                 self.solution = new_solution
                 return
         self.solution = tie_breaker
@@ -97,7 +97,7 @@ class Dijkstra:
 
     @staticmethod
     def is_hub_free(hub: Hub, turn: int) -> bool:
-        if hub.zone_type == ZoneType.RESTRICTED:
+        if hub.zone == ZoneType.RESTRICTED:
             turn += 1
 
         if hub.get_drone_capacity_per_turn(turn) >= hub.max_drones:

@@ -8,7 +8,6 @@ def main() -> None:
         file_content: ValidateData = ValidateData("test.txt")
         parsed_data = file_content.parse_file_content()
         drone_map = DroneMap(**parsed_data)
-        drone_map.create_drones()
     except ValidationError as e:
         print(e.errors()[0]['msg'].replace("Value error, ", ""))
     except Exception as e:

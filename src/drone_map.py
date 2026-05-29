@@ -1,4 +1,3 @@
-from __future__ import annotations
 from pydantic import BaseModel, Field, ValidationError, model_validator
 from typing import Optional
 from drone import Drone
@@ -11,56 +10,25 @@ class DroneMap(BaseModel):
     nb_drones: int = Field(ge=1)
     start_hub: Hub
     end_hub: Hub
-    hub: Optional[dict[dict[str, Hub]]]
+    hub: Optional[dict[str, Hub]]
     connection: Optional[list[Connection]]
 
     @model_validator(mode='after')
-    def verify_hub_coordonates_duplicate(self) -> DroneMap:
-        """Verify if hubs have the same coordonates"""
-        for i in range(0, len(self.hub)):
-            for j in range(i + 1, len(self.hub)):
-                if (self.hub[i].x == self.hub[j].x and
-                   self.hub[i].y == self.hub[j].y):
-                    raise ValueError(f"Hub error: hubs {self.hub[i].zone_name}"
-                                     f" and {self.hub[j].zone_name} have the "
-                                     "same coordonates")
-
-            if (self.start_hub.x == self.hub[i].x and
-               self.start_hub.y == self.hub[i].y):
-                raise ValueError(f"Hub error: hubs {self.start_hub.zone_name} "
-                                 f"and {self.hub[i].zone_name} have the same "
-                                 "coordonates")
-            if (self.end_hub.x == self.hub[i].x and
-               self.end_hub.y == self.hub[i].y):
-                raise ValueError(f"Hub error: hubs {self.end_hub.zone_name} "
-                                 f"and {self.hub[i].zone_name} have the same "
-                                 "coordonates")
-
-        if (self.end_hub.x == self.start_hub.x and
-           self.end_hub.y == self.start_hub.y):
-            raise ValueError(f"Hub error: hubs {self.end_hub.zone_name} "
-                             f"and {self.start_hub.zone_name} have the "
-                             "same coordonates")
-        return self
-
-    @model_validator(mode='after')
-    def verify_connection_duplicate(self) -> DroneMap:
+    def update_hub_neighbors(self) -> "DroneMap":
         """Verify if there is connections duplicate"""
-        for i in range(0, len(self.connection)):
-            for j in range(i + 1, len(self.connection)):
-                zones_1 = [self.connection[i].zone_1_name,
-                           self.connection[i].zone_2_name]
-                zones_2 = [self.connection[j].zone_1_name,
-                           self.connection[j].zone_2_name]
-                if all(element in zones_1 for element in zones_2):
-                    raise ValueError("Connection error: multiple connections "
-                                     "are between "
-                                     f"{self.connection[i].zone_1_name} and "
-                                     f"{self.connection[i].zone_2_name}")
+        for connection in self.connection:
+            if (connection.zone_2_name not in hub[connection.zone_1_name] and
+               connection.zone_1_name not in hub[connection.zone_2_name]):
+                self.hub[connection.zone_1_name].add(connection.zone_2_name)
+                self.hub[connection.zone_2_name].add(connection.zone_1_name)
+            else:
+                raise ValueError("Connection error: multiple connections are "
+                                 f"between {connection.zone_1_name} and "
+                                 f"{connection.zone_2_name}")
         return self
 
     @model_validator(mode='after')
-    def verify_entry_exit_max_drones(self) -> DroneMap:
+    def verify_entry_exit_max_drones(self) -> "DroneMap":
         """Verify if entry/exit can support all the drones at once"""
         if self.nb_drones > self.start_hub.max_drones:
             raise ValueError("Hub error: start hub can't support "
@@ -70,55 +38,56 @@ class DroneMap(BaseModel):
                              f"{self.nb_drones} drones")
         return self
 
-    @model_validator(mode='after')
-    def update_all_connected_hub(self) -> None:
-        """Connect all hubs based on their connections"""
-        for connection in DroneMap.connection:
-            self.hub[connection.zone_1_name]["connections"] = {
-                connection.zone_2_name: connection}
+    # @model_validator(mode='after')
+    # def update_all_connected_hub(self) -> None:
+    #     """Connect all hubs based on their connections"""
+    #     for connection in DroneMap.connection:
+    #         self.hub[connection.zone_1_name]["connections"] = {
+    #             connection.zone_2_name: connection}
 
-    def create_drones(self) -> None:
-        """Call the drone factory to create the drones"""
-        self.drones = Drone.drone_factory(self.nb_drones)
+    # def create_drones(self) -> None:
+    #     """Call the drone factory to create the drones"""
+    #     self.drones = Drone.drone_factory(self.nb_drones)
 
-    def update_all_solution(self) -> None:
-        """Get the drones shortest path from entry to exit"""
-        for drone in self.drones:
-            drone.get_path_solution(drone.id)
+    # def update_all_solution(self) -> None:
+    #     """Get the drones shortest path from entry to exit"""
+    #     for drone in self.drones:
+    #         drone.get_path_solution(drone.id)
 
-    def simulate_turn(self) -> None:
-        """Simulate a turn for all drones"""
-        for drone in self.drones:
-            drone.simulate_turn()
+    # def simulate_turn(self) -> None:
+    #     """Simulate a turn for all drones"""
+    #     for drone in self.drones:
+    #         drone.simulate_turn()
 
-    def simulate_reverse_turn(self) -> None:
-        """Simulate a reverse turn for all drones"""
-        for drone in self.drones:
-            drone.simulate_reverse_turn()
+    # def simulate_reverse_turn(self) -> None:
+    #     """Simulate a reverse turn for all drones"""
+    #     for drone in self.drones:
+    #         drone.simulate_reverse_turn()
     
-    def visual_simulation(self) -> None:
-        """Launch the visual representation of the simulation"""
-        import pygame
+    # def visual_simulation(self) -> None:
+    #     """Launch the visual representation of the simulation"""
+    #     import pygame
         
-        pygame.init()
-        screen = pygame.display.set_mode((800, 600))
-        clock = pygame.time.Clock()
+    #     pygame.init()
+    #     screen = pygame.display.set_mode((800, 600))
+    #     clock = pygame.time.Clock()
 
-        running = True
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
+    #     running = True
+    #     while running:
+    #         for event in pygame.event.get():
+    #             if event.zone == pygame.QUIT:
+    #                 running = False
             
-            keys = pygame.key.get_pressed()
-            if keys[pygame.K_LEFT]:
-                self.simulate_reverse_turn()
-            if keys[pygame.K_RIGHT]:
-                self.simulate_turn()
+    #         keys = pygame.key.get_pressed()
+    #         if keys[pygame.K_LEFT]:
+    #             self.simulate_reverse_turn()
+    #         if keys[pygame.K_RIGHT]:
+    #             self.simulate_turn()
             
-            pygame.display.flip()
-            clock.tick(60)
+    #         pygame.display.flip()
+    #         clock.tick(60)
 
+DroneMap.model_rebuild()
 
 def main() -> None:
     try:
@@ -126,36 +95,36 @@ def main() -> None:
             nb_drones=5,
             start_hub=Hub(
                 hub_type="normal",
-                zone_name="start",
-                x=0,
-                y=0,
-                zone_type="normal",
+                name="start",
+                coordinates=['4', '3'],
+                zone="normal",
                 color="red",
                 max_drones=50,
             ),
             end_hub=Hub(
                 hub_type="normal",
-                zone_name="goal",
-                x=1,
-                y=1,
-                zone_type="normal",
+                name="goal",
+                coordinates=['4', '2'],
+                zone="normal",
                 color="red",
                 max_drones=50,
             ),
-            hub=Hub(
-                hub_type="normal",
-                zone_name="hub1",
-                x=0,
-                y=1,
-                zone_type="normal",
+            hub={"hub1": Hub(
+                name="hub1",
+                coordinates=['4', '1'],
+                zone="normal",
                 color="red",
                 max_drones=50,
-            ),
+            )},
             connection=list[
                 Connection(
                     zone_1_name="zone1",
                     zone_2_name="zone2",
                     max_link_capacity=2,
+                ),
+                Connection(
+                    zone_1_name="zone2",
+                    zone_2_name="zone3",
                 ),
             ],
         )

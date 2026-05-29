@@ -5,8 +5,6 @@
 ## Table of Contents
 - [Fly-in](#fly-in)
 	- [Table of Contents](#table-of-contents)
-	- [Description](#description)
-	- [Instructions](#instructions)
-    - [Algorithm](#algorithm)
-    - [Visual representation](#visual representation)
-	- [Resources](#resources)
+  
+[codecademy: Dijkstra algorithm](https://www.codecademy.com/article/dijkstras-shortest-path-algorithm)  
+[Excalidraw: Visual representation](https://excalidraw.com/)

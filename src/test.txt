@@ -19,5 +19,5 @@ hub: gate_hell5 6 0 [color=red max_drones=1]
 end_hub: impossible_goal 23 0 [color=rainbow max_drones=25]
 
 connection: start-gate_hell1 [max_link_capacity=1]
-connection: start-gate_hell6 [max_link_capacity=1]
+connection: start-gate_hell5 [max_link_capacity=1]
 

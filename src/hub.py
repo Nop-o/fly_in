@@ -1,37 +1,39 @@
 from pydantic import BaseModel, Field, ValidationError, model_validator
-from typing import Any
+from typing import Any, Annotated
 from connection import Connection
 from zone_type import ZoneType
 
 
+Coordinate = Annotated[int, Field(ge=0, le=200)]
+
 class Hub(BaseModel):
 
-    zone_name: str = Field(min_length=3, max_length=20)
-    x: int = Field(ge=0)
-    y: int = Field(ge=0)
-    zone_type: ZoneType = Field(default=ZoneType.NORMAL)
-    color: str = Field(default=None, min_length=3, max_length=20)
+    name: str = Field(min_length=3, max_length=20)
+    coordinates: tuple[Coordinate, Coordinate]
+    zone: ZoneType = Field(default=ZoneType.NORMAL)
+    color: str = Field(default="red", min_length=3, max_length=20)
     max_drones: int = Field(default=1, ge=0)
+    neighbors: set["Hub"] = Field(default_factory=set)
+
 
     @model_validator(mode='before')
     @classmethod
     def update_zone(cls, data: dict[str, Any]) -> dict[str, Any]:
-        """Update the hub zone type"""
-        if not data.get("zone_type"):
-            data["zone_type"] = ZoneType.NORMAL
-        elif data["zone_type"] == "normal":
-            data["zone_type"] = ZoneType.NORMAL
-        elif data["zone_type"] == "blocked":
-            data["zone_type"] = ZoneType.BLOCKED
-        elif data["zone_type"] == "restricted":
-            data["zone_type"] = ZoneType.RESTRICTED
-        elif data["zone_type"] == "priority":
-            data["zone_type"] = ZoneType.PRIORITY
+        """Update the hub zone zone"""
+        hub_type = data.get("zone", "normal")
+        if hub_type == "normal":
+            data["zone"] = ZoneType.NORMAL
+        elif hub_type == "blocked":
+            data["zone"] = ZoneType.BLOCKED
+        elif hub_type == "restricted":
+            data["zone"] = ZoneType.RESTRICTED
+        elif hub_type == "priority":
+            data["zone"] = ZoneType.PRIORITY
         else:
-            raise ValueError("Hub error: impossible zone type for "
-                             f"{data['zone_name']}")
+            raise ValueError("Hub error: impossible zone zone for "
+                             f"{data['name']}")
         return data
-    
+
     def set_current_drone_capacity_per_turn(self, turn: int) -> None:
         """Update/set the number of drone on the hub at a given turn"""
         if self.turn_capacity[turn]:
@@ -46,22 +48,28 @@ class Hub(BaseModel):
         else:
             return self.turn_capacity[turn]
     
-    #def add_connection(self, connection: 'Connection') -> None:
-    #    if not self.connection:
-    #        self.connection: list[connection] = []
-    #    self.connections.append(connection)
+    def get_hub_weight(self) -> int:
+        """Get the weight of coming to the hub."""
+        if self.zone in [ZoneType.NORMAL, ZoneType.PRIORITY]:
+            return 1
+        elif self.zone in ZoneType.PRIORITY:
+            return 2
+        return (float('inf'))
 
-    #def get_neighbors(self) -> List['Connection']:
-    #    return self.connections
+    def add_neighbors(self, hub: 'Hub') -> None:
+       self.connections.append(hub)
 
+    def get_neighbors(self) -> list['Connection']:
+       return self.neighbors
+
+Hub.model_rebuild()
 
 def main() -> None:
     try:
-        hub = Hub(zone_name="z1h1", x=1, y=0)
-        print(hub.x)
-        print(hub.y)
-        print(hub.zone_name)
-        print(hub.zone_type.value)
+        hub = Hub(name="z1h1", coordinates=[1, 0])
+        print(hub.name)
+        print(hub.zone.value)
+        print(hub.coordinates)
         print(hub.color)
         print(hub.max_drones)
     except ValidationError as e:
