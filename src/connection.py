@@ -2,9 +2,10 @@ from pydantic import BaseModel, Field, ValidationError
 
 
 class Connection(BaseModel):
-    zone_1_name: str = Field(min_length=3, max_length=20)
-    zone_2_name: str = Field(min_length=3, max_length=20)
-    max_link_capacity: int = Field(default=1, ge=0)
+    zone_1: str = Field(min_length=3, max_length=20)
+    zone_2: str = Field(min_length=3, max_length=20)
+    max_link_capacity: int = Field(default=1, ge=0, le=100)
+    turn_capacity: int = Field(default=0)
     
     def set_current_connection_capacity_per_turn(self, turn: int) -> None:
         """Update/set the number of drone on the connection at a given turn"""
