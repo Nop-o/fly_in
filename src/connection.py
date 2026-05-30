@@ -25,8 +25,8 @@ class Connection(BaseModel):
 def main() -> None:
     try:
         connection = Connection(
-            zone_1_name="zone1",
-            zone_2_name="zone2",
+            zone_1="zone1",
+            zone_2="zone2",
         )
         print(connection.zone_1_name)
         print(connection.zone_2_name)
