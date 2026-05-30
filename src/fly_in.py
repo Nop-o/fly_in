@@ -1,8 +1,9 @@
 def main() -> None:
     try:
         from pydantic import ValidationError
-    except ModuleNotFoundError as e:
-        print("Import error: pydantic is not installed, run the 'make install' command first")
+    except ModuleNotFoundError:
+        print("Import error: pydantic is not installed, run the "
+              "'make install' command first")
         return
 
     from parsing import ValidateData
@@ -14,9 +15,9 @@ def main() -> None:
         drone_map = DroneMap(**parsed_data)
         drone_map.create_drones()
         print(drone_map.drones)
+        print(len(drone_map.drones))
     except ValidationError as e:
         print(e.errors()[0]['msg'].replace("Value error, ", ""))
-    
 
 
 if __name__ == "__main__":
