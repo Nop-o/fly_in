@@ -28,8 +28,8 @@ def main() -> None:
             zone_1="zone1",
             zone_2="zone2",
         )
-        print(connection.zone_1_name)
-        print(connection.zone_2_name)
+        print(connection.zone_1)
+        print(connection.zone_2)
         print(connection.max_link_capacity)
     except ValidationError as e:
         print(e.errors()[0]["msg"].replace("Value error, ", ""))
