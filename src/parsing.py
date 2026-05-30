@@ -17,9 +17,18 @@ class ValidateData:
     def parse_file_content(self) -> dict[str, Any]:
         """
         Verify if the retrieved data is in the food format and useable.
-        Return a dict that will be used to create a drone map which contains 
+        Return a dict that will be used to create a drone map which contains
         hubs and connections who will be created at the same time as the map.
         """
+        parsed_data: dict[str, Any] = {
+            "nb_drones": 1,
+            "start_hub": None,
+            "end_hub": None,
+            "hub": {},
+            "connection": [],
+            "drones": [],
+        }
+
         possible_key: list[str] = [
             "nb_drones",
             "start_hub",
@@ -30,13 +39,6 @@ class ValidateData:
         zone_name: set[str] = set()
         coordinates: set[tuple[str, str]] = set()
         is_first: bool = True
-        parsed_data: dict[str, Any] = {
-            "nb_drones": '1',
-            "start_hub": None,
-            "end_hub": None,
-            "hub": {},
-            "connection": [],
-        }
 
         for i, line in enumerate(self.file_content):
             if not line or line[0] == "#":
@@ -108,9 +110,10 @@ class ValidateData:
     ) -> dict[str, str]:
         """Verify that the possible connection is valid."""
         connection: dict[str, str] = {
-            "zone_1_name": None,
-            "zone_2_name": None,
-            "max_link_capacity": None,
+            "zone_1": None,
+            "zone_2": None,
+            "max_link_capacity": 1,
+            "turn_capacity": {},
         }
 
         if "-" not in value:
@@ -135,10 +138,10 @@ class ValidateData:
                     f"(line {line})"
                 )
             zone2, metadata = split_metadata[0], split_metadata[1]
-            connection.update(ValidateData.verify_metadata("connection", metadata,
-                                                           line))
-        connection["zone_1_name"] = zone1
-        connection["zone_2_name"] = zone2
+            connection.update(ValidateData.verify_metadata("connection",
+                                                           metadata, line))
+        connection["zone_1"] = zone1
+        connection["zone_2"] = zone2
 
         if zone1 not in zone_name or zone2 not in zone_name:
             raise ValueError(
@@ -154,15 +157,17 @@ class ValidateData:
 
     @staticmethod
     def verify_hub(
-        zone_name: set[str], coordinates: set[tuple[str, str]], key: str, value: str, line: int, drone_count: str
+        zone_name: set[str], coordinates: set[tuple[str, str]],
+        key: str, value: str, line: int, drone_count: str
     ) -> dict[str, str]:
         """Verify that the possible hub is valid."""
         hub: dict[str, str] = {
             "name": None,
             "coordinates": None,
             "zone": "normal",
-            "color": None,
+            "color": "red",
             "neighbors": [],
+            "turn_capacity": {},
         }
 
         if " " not in value:
@@ -183,7 +188,7 @@ class ValidateData:
             metadata = data[3]
             hub.update(ValidateData.verify_metadata(key, metadata, line))
 
-        if key in ["start_hub", "end_hub"]:
+        if key in ["start_hub", "end_hub"] and "max_drones" not in metadata:
             hub["max_drones"] = drone_count
         else:
             hub["max_drones"] = hub.get("max_drones", '1')
@@ -210,6 +215,7 @@ class ValidateData:
     def verify_metadata(key: str, metadatas: str, line: int) -> dict[str, str]:
         """Verify that the possible metadata is valid."""
         parsed_metadata: dict[str, str] = {}
+
         possible_key: list[str] = [
             "zone",
             "color",
