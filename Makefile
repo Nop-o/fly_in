@@ -23,19 +23,19 @@ install:
 	@echo "source $(VENV)/bin/activate"
 
 run:
-	$(PYTHON) $(MAIN) $(INPUT)
+	$(VENV)/bin/python $(MAIN) $(INPUT)
 
 debug:
-	$(PYTHON) -m pdb $(MAIN) $(INPUT)
+	$(VENV)/bin/python -m pdb $(MAIN) $(INPUT)
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type d -name .mypy_cache -exec rm -rf {} +
-	find . -type d -name $(VENV) -exec rm -rf {}
+	find . -type d -name $(VENV) -exec rm -rf {} \;
 
 lint:
 	$(PYTHON) -m flake8 . --exclude=$(VENV)
-	mypy . --explicit-package-bases \
+	mypy . --warn-unused-ignores \
 	        --warn-return-any \
 	        --ignore-missing-imports \
 	        --disallow-untyped-defs \
@@ -43,9 +43,8 @@ lint:
 
 lint-strict:
 	$(PYTHON) -m flake8 . --exclude=$(VENV)
-	mypy	--strict . \
-	    	--explicit-package-bases
-	
+	mypy	--strict .
+
 .PHONY: install run debug clean lint lint-strict help
 
 
