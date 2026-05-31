@@ -11,7 +11,7 @@ Coordinate = Annotated[int, Field(ge=0, le=200)]
 class Drone(BaseModel):
 
     id: int = Field(ge=1, le=100)
-    solution: dict[str, Any]  = Field(default_factory=dict)
+    solution: dict[str, Any] = Field(default_factory=dict)
     position: list[Coordinate, Coordinate] = Field(default_factory=list)
 
     def get_path_solution(self) -> None:
@@ -80,7 +80,7 @@ def main() -> None:
                         color="red",
                         max_drones=50,
                         neighbors=[],
-                    ), Hub(
+                        ), Hub(
                         name="hub2",
                         coordinates=['3', '5'],
                         zone="normal",
