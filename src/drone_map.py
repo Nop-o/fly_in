@@ -53,7 +53,7 @@ class DroneMap(BaseModel):
 
     def create_drones(self) -> None:
         """Call the drone factory to create the drones"""
-        self.drones = Drone.drone_factory(self.nb_drones)
+        self.drones = Drone.drone_factory(self.nb_drones, self.start_hub)
 
     def update_all_solution(self) -> None:
         """Get the drones shortest path from entry to exit"""

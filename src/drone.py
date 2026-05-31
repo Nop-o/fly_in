@@ -11,7 +11,7 @@ Coordinate = Annotated[int, Field(ge=0, le=200)]
 class Drone(BaseModel):
 
     id: int = Field(ge=1, le=100)
-    solution: dict[str, Any] = Field(default_factory=dict)
+    solution: list[Hub] = Field(default_factory=list)
     position: list[Coordinate, Coordinate] = Field(default_factory=list)
 
     def get_path_solution(self) -> None:
@@ -28,7 +28,7 @@ class Drone(BaseModel):
         """
         if not self.solution:
             return
-        if turn > len(self.solution["path"]) or turn < 0:
+        if turn > len(self.solution) or turn < 0:
             return
 
         self.update_position(turn)
@@ -41,7 +41,7 @@ class Drone(BaseModel):
         """
         if not self.solution:
             return
-        if turn > len(self.solution["path"]) or turn < 0:
+        if turn > len(self.solution) or turn < 0:
             return
 
         self.update_position(turn)
@@ -49,12 +49,12 @@ class Drone(BaseModel):
 
     def print_current_position_and_id(self, turn: int) -> None:
         """Print the turn output of the drone (current position with ID)"""
-        print(f"D{self.id}-{self.solution["path"][turn].name} ", end="")
+        print(f"D{self.id}-{self.solution[turn].name} ", end="")
 
     def update_position(self, turn: int) -> None:
         self.position.clear()
-        self.position.append(self.solution["path"][turn].coordinates[0])
-        self.position.append(self.solution["path"][turn].coordinates[1])
+        self.position.append(self.solution[turn].coordinates[0])
+        self.position.append(self.solution[turn].coordinates[1])
 
     @staticmethod
     def drone_factory(nb_of_drone: int, starting_hub: Hub) -> list[Drone]:
@@ -63,8 +63,7 @@ class Drone(BaseModel):
 
         for i in range(nb_of_drone):
             new_drone = Drone(id=i + 1,
-                              solution={"path": starting_hub,
-                                        "score": 0},
+                              solution=[],
                               position=[])
             created_drones.append(new_drone)
         return created_drones
@@ -73,7 +72,7 @@ class Drone(BaseModel):
 def main() -> None:
     try:
         drone = Drone(id=1,
-                      solution={"path": [Hub(
+                      solution=[Hub(
                         name="hub1",
                         coordinates=['4', '1'],
                         zone="normal",
@@ -86,9 +85,8 @@ def main() -> None:
                         zone="normal",
                         color="red",
                         max_drones=50,
-                        neighbors=[],)
+                        neighbors=[]),
                         ],
-                        "score": 0},
                       position=[1, 0])
         drone.simulate_turn(turn=0)
         print(drone.position)
