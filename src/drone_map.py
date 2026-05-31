@@ -28,14 +28,16 @@ class DroneMap(BaseModel):
             raise ValueError("Connection error: no connections created")
 
         for road in self.connection:
-            if (self.hub[road.zone_1] in self.hub[road.zone_2].neighbors or
-               self.hub[road.zone_2] in self.hub[road.zone_1].neighbors):
+            if (self.hub[road.zone_2].neighbors.get(road.zone_1) or
+               self.hub[road.zone_1].neighbors.get(road.zone_2)):
                 raise ValueError("Connection error: multiple connections are "
                                  f"between {road.zone_1} and "
                                  f"{road.zone_2}")
             else:
-                self.hub[road.zone_1].neighbors.append(self.hub[road.zone_2])
-                self.hub[road.zone_2].neighbors.append(self.hub[road.zone_1])
+                self.hub[road.zone_1].neighbors[road.zone_2] = {
+                    "hub": self.hub[road.zone_2], "connection": road}
+                self.hub[road.zone_2].neighbors[road.zone_1] = {
+                    "hub": self.hub[road.zone_1], "connection": road}
         return self
 
     @model_validator(mode='after')
@@ -110,7 +112,7 @@ def main() -> None:
                 zone="normal",
                 color="red",
                 max_drones=50,
-                neighbors=[],
+                neighbors={},
             ),
             end_hub=Hub(
                 hub_type="normal",
@@ -119,7 +121,7 @@ def main() -> None:
                 zone="normal",
                 color="red",
                 max_drones=50,
-                neighbors=[],
+                neighbors={},
             ),
             hub={"hub1": Hub(
                 name="hub1",
@@ -127,7 +129,7 @@ def main() -> None:
                 zone="normal",
                 color="red",
                 max_drones=50,
-                neighbors=[],
+                neighbors={},
             )},
             connection=[
                 Connection(

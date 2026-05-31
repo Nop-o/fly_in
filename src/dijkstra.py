@@ -27,7 +27,7 @@ class Dijkstra:
                            current_hub: Hub, turn: int, score: int) -> None:
         """
         Dijkstra algorithm:
-            - on a map, each connections and points have a weight
+            - on a map, each neighbors and points have a weight
             - the weight is the time cost the reach that point
             - it finds the shortest path between two points with a weighted map
         """
@@ -52,7 +52,7 @@ class Dijkstra:
 
         turn += 1
 
-        for next_hub in current_hub["connections"].keys():
+        for next_hub in current_hub["neighbors"].keys():
             while ((not Dijkstra.is_connection_free(current_hub,
                                                     next_hub, turn)
                or not Dijkstra.is_hub_free(hub[next_hub], turn))
@@ -89,8 +89,8 @@ class Dijkstra:
 
     @staticmethod
     def is_connection_free(hub: Hub, next_hub: str, turn: int) -> bool:
-        if (hub["connections"][next_hub].max_link_capacity <=
-        hub["connections"][next_hub].get_current_connection_capacity_per_turn(
+        if (hub["neighbors"][next_hub].max_link_capacity <=
+        hub["neighbors"][next_hub].get_current_connection_capacity_per_turn(
            turn)):
             return False
         return True
@@ -103,9 +103,3 @@ class Dijkstra:
         if hub.get_drone_capacity_per_turn(turn) >= hub.max_drones:
             return False
         return True
-
-    @staticmethod
-    def update_hub_capacity(hub_list: list[Hub]) -> None:
-        """Update all hub capacity when the drone is visiting it."""
-        for i, hub in enumerate(hub_list, 0):
-            hub.set_drone_capacity_per_turn(i)

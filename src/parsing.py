@@ -167,7 +167,7 @@ class ValidateData:
             "zone": "normal",
             "color": "red",
             "max_drones": '1',
-            "neighbors": [],
+            "neighbors": {},
             "turn_capacity": {},
         }
 

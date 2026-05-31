@@ -13,7 +13,7 @@ class Hub(BaseModel):
     zone: ZoneType = Field(default=ZoneType.NORMAL)
     color: str = Field(default="red", min_length=3, max_length=20)
     max_drones: int = Field(default=1, ge=0, le=100)
-    neighbors: list['Hub'] = Field(default_factory=list)
+    neighbors: dict[str, Any] = Field(default_factory=dict)
     turn_capacity: dict[int, int] = Field(default_factory=dict)
 
     @model_validator(mode='before')
