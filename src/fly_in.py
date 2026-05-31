@@ -10,7 +10,7 @@ def main() -> None:
     from drone_map import DroneMap
 
     try:
-        file_content: ValidateData = ValidateData("test.txt")
+        file_content: ValidateData = ValidateData("src/test.txt")
         parsed_data = file_content.parse_file_content()
         drone_map = DroneMap(**parsed_data)
         drone_map.create_drones()
