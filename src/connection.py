@@ -20,6 +20,10 @@ class Connection(BaseModel):
             return self.turn_capacity[turn]
         return 0
 
+    def is_connection_accessible(self, turn: int) -> bool:
+        """See if a drone can access the connection."""
+        return self.max_drones > self.get_current_drone_count(turn)
+
 
 def main() -> None:
     try:

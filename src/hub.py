@@ -47,13 +47,20 @@ class Hub(BaseModel):
             return self.turn_capacity[turn]
         return 0
 
-    def get_hub_weight(self) -> int:
+    def get_hub_weight(self) -> int | float:
         """Get the weight of coming to the hub."""
         if self.zone in [ZoneType.NORMAL, ZoneType.PRIORITY]:
             return 1
         elif self.zone == ZoneType.RESTRICTED:
             return 2
         return (float('inf'))
+
+    def is_hub_accessible(self, turn: int) -> bool:
+        """See if a drone can access the hub."""
+        if hub.zone == ZoneType.RESTRICTED:
+            turn += 1
+
+        return self.max_drones > self.get_current_drone_count(turn)
 
 
 Hub.model_rebuild()
