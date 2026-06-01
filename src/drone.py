@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dijkstra import Dijkstra
 from pydantic import BaseModel, Field
-from typing import Any, Annotated
+from typing import Annotated
 from hub import Hub
 
 
