@@ -14,12 +14,14 @@ class Drone(BaseModel):
     solution: list[Hub] = Field(default_factory=list)
     position: list[Coordinate, Coordinate] = Field(default_factory=list)
 
-    def get_path_solution(self) -> None:
+    def get_path_solution(self, hubs: dict[str, Hub], start_hub: Hub,
+                          end_hub: Hub) -> None:
         """
         Call the Dijkstra algrithm to find the shortest path
         between the entry and the exit.
         """
-        self.solution = Dijkstra.find_shortest_path(self.id)
+        algorithm = Dijkstra(start_hub, end_hub)
+        self.solution = algorithm.find_solution_and_update_hub_capacity(hubs)
 
     def simulate_turn(self, turn: int) -> None:
         """
