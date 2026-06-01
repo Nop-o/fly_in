@@ -74,29 +74,6 @@ class DroneMap(BaseModel):
             drone.simulate_reverse_turn()
         print()
 
-    # def visual_simulation(self) -> None:
-    #     """Launch the visual representation of the simulation"""
-    #     import pygame
-
-    #     pygame.init()
-    #     screen = pygame.display.set_mode((800, 600))
-    #     clock = pygame.time.Clock()
-
-    #     running = True
-    #     while running:
-    #         for event in pygame.event.get():
-    #             if event.zone == pygame.QUIT:
-    #                 running = False
-
-    #         keys = pygame.key.get_pressed()
-    #         if keys[pygame.K_LEFT]:
-    #             self.simulate_reverse_turn()
-    #         if keys[pygame.K_RIGHT]:
-    #             self.simulate_turn()
-
-    #         pygame.display.flip()
-    #         clock.tick(60)
-
 
 DroneMap.model_rebuild()
 
