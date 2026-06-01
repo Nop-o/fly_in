@@ -1,105 +1,121 @@
 from hub import Hub
+from connection import Connection
 from zone_type import ZoneType
 from typing import Any
-from connection import Connection
+import heapq
 
 
 class Dijkstra:
-    def __init__(self, entry: Hub, exit: Hub) -> None:
-        self.entry: Hub = entry
+    def __init__(self, start: Hub, exit: Hub) -> None:
+        self.start: Hub = start
         self.exit: Hub = exit
-        self.score: int = -1
-        self.solution: dict[str, Any] = {}
+        self.solution: dict[str, Any] = {
+            "path": [],
+            "score": 0}
 
-    def get_solution(self) -> None:
+    def find_solution_and_update_hub_capacity(self, hubs: list[Hub]) -> None:
         """
         Find the shortest path between the entry and the exit.
         If two paths take the same time, take the one with the
         highest priority.
         """
-        solution: dict[str, Any] = {"path": [],
-                                    "score": 0,}
+        self.solution = self.find_solution(hubs)
+        self.update_hub_connection_capacity(self.solution)
 
-        self.find_all_solutions(solution, self.entry, turn=0, score=0)
-        self.update_hub_capacity(solution)
+        return self.solution
 
-    def find_all_solutions(self, solution: dict[str, Any],
-                           current_hub: Hub, turn: int, score: int) -> None:
+    def find_solution(self, hubs: dict[str, Hub]) -> dict[int, Hub | Connection]:
         """
         Dijkstra algorithm:
-            - on a map, each neighbors and points have a weight
-            - the weight is the time cost the reach that point
-            - it finds the shortest path between two points with a weighted map
+            - on a graph, each points have a weight (init to inf)
+            - the weight is the time cost the reach that point from start
+            - if a new faster way of getting to a point is discovered,
+              update the point weight
+            - returns a dict with the current turn as a key and the position
+              of the drone
         """
-        if not current_hub or current_hub.zone == ZoneType.BLOCKED:
-            return
+        print("hello")
+        print(hubs)
+        solution: dict[str, dict[str, Any]] = {
+            hub.name: {
+                "turn": 0,
+                "distance": float('inf'),
+                "priority": 0,
+                "path": [],
+             } for hub in hubs
+            }
+        turn: int = 0
+        queue = [(0, 0, self.start)]
 
-        solution["path"].append(current_hub)
-
-        if current_hub.zone == ZoneType.RESTRICTED:
-            solution["score"] += 2
-        else:
-            solution["score"] += 1
-
-        if self.score != -1 and solution["score"] > self.score:
-            return
-
-        if current_hub == self.exit:
-            self.score = solution["score"]
-            self.find_highest_priority_solution(solution)
-            solution["path"].pop()
-            return
-
-        turn += 1
-
-        for next_hub in current_hub["neighbors"].keys():
-            while ((not Dijkstra.is_connection_free(current_hub,
-                                                    next_hub, turn)
-               or not Dijkstra.is_hub_free(hub[next_hub], turn))
-               and solution["score"] < self.score):
-                solution["path"].append(current_hub)
-                solution["score"] += 1
-                turn += 1
-            self.find_all_solutions(solution, hub[next_hub], turn, score)
-
-        solution.pop()
-
-    def find_highest_priority_solution(self, new_solution: dict[str, Any]) -> None:
-        tie_breaker: dict[str, Any]
-        if not self.solution:
-            self.solution = solution
-            return
-
-        if len(self.solution["path"]) > len(new_solution["path"]):
-            min_length =  len(new_solution["path"])
-            tie_breaker = new_solution
-        else:
-            min_length =  len(self.solution["path"])
-            tie_breaker = self.solution
-
-        for i in range(min_length):
-            if (self.solution["path"][i].zone == ZoneType.PRIORITY
-               and new_solution["path"][i].zone != ZoneType.PRIORITY):
-                return
-            elif (new_solution["path"][i].zone == ZoneType.PRIORITY
-               and self.solution["path"][i].zone != ZoneType.PRIORITY):
-                self.solution = new_solution
-                return
-        self.solution = tie_breaker
-
-    @staticmethod
-    def is_connection_free(hub: Hub, next_hub: str, turn: int) -> bool:
-        if (hub["neighbors"][next_hub].max_link_capacity <=
-        hub["neighbors"][next_hub].get_current_connection_capacity_per_turn(
-           turn)):
-            return False
-        return True
-
-    @staticmethod
-    def is_hub_free(hub: Hub, turn: int) -> bool:
-        if hub.zone == ZoneType.RESTRICTED:
+        while queue:
+            distance, priority, hub = heapq.heappop(queue)
             turn += 1
 
-        if hub.get_drone_capacity_per_turn(turn) >= hub.max_drones:
+            if distance > solution[hub.name]["distance"]:
+                continue
+
+            for neighbor in hub.neighbors:
+                weight = Dijkstra.get_travel_time(
+                        hub, neighbor, turn, distance,
+                        solution[neighbor.name]["distance"])
+                turn += weight
+                distance = distance + weight + neighbor.get_hub_weight()
+
+                if Dijkstra.is_the_new_path_better(
+                        distance, priority, solution[neighbor.name]):
+
+                    if neighbor.zone_type == ZoneType.PRIORITY:
+                        priority -= 1
+
+                    solution[neighbor.name]["turn"] = turn
+                    solution[neighbor.name]["distance"] = distance
+                    solution[neighbor.name]["priority"] = priority
+                    solution[neighbor.name]["path"].append(neighbor)
+
+                    heapq.heappush(queue, (distance, priority, neighbor))
+
+        return solution["path"][self.exit.name]
+
+    @staticmethod
+    def get_travel_time(hub: Hub, neighbor: Hub, turn: int,
+                        distance: int, shortest_distance: int
+                        ) -> int | float:
+        """Find the cost of traveling to the next hub."""
+        travel_time: int | float = 0
+        connection: Connection = hub.neighbors[neighbor.name]["connection"]
+
+        if neighbor.type == ZoneType.BLOCKED:
+            return float('inf')
+        if neighbor.max_drones == 0 or connection.max_link_capacity == 0:
+            return float('inf')
+
+        while (distance + travel_time) <= shortest_distance:
+            if connection.is_connection_accessible(turn):
+                if hub.is_hub_accessible(turn):
+                    break
+            turn += 1
+            travel_time += 1
+
+        return travel_time
+
+    @staticmethod
+    def is_the_new_path_better(new_distance: int, new_priority: int,
+                               best_solution: dict[str, Any]) -> bool:
+        """Decide if the new pqth is better thqn the current best one"""
+        if new_distance == float('inf'):
             return False
-        return True
+
+        if new_distance == best_solution["distance"]:
+            return new_priority < best_solution["priority"]
+        return new_distance < best_solution["distance"]
+
+    @staticmethod
+    def update_hub_connection_capacity(
+            path_solution: dict[int, Hub]) -> None:
+        """Update hub/connection drone count when the drone is visiting it."""
+        last_hub: Hub - None = None
+        for turn, hub in path_solution.items():
+            if hub.zone == ZoneType.RESTRICTED:
+                 if last_hub and last_hub != hub:
+                    last_hub["neighbors"]["connection"].update_current_drone_count(turn - 1)
+            position.update_current_drone_count(turn)
