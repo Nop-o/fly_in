@@ -60,7 +60,7 @@ class DroneMap(BaseModel):
     def update_all_solution(self) -> None:
         """Get the drones shortest path from entry to exit"""
         for drone in self.drones:
-            drone.get_path_solution()
+            drone.get_path_solution(self.hub, self.start_hub, self.end_hub)
 
     def simulate_turn(self) -> None:
         """Simulate a turn for all drones"""
