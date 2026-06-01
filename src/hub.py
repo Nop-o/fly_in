@@ -34,14 +34,14 @@ class Hub(BaseModel):
                              f"{data['name']}")
         return data
 
-    def set_current_drone_capacity_per_turn(self, turn: int) -> None:
+    def update_current_drone_count(self, turn: int) -> None:
         """Update/set the number of drone on the hub at a given turn"""
         if turn not in self.turn_capacity.keys():
             self.turn_capacity[turn] = 1
         else:
             self.turn_capacity[turn] += 1
 
-    def get_current_drone_capacity_per_turn(self, turn: int) -> int:
+    def get_current_drone_count(self, turn: int) -> int:
         """Get the number of drone on the hub at a given turn"""
         if turn in self.turn_capacity.keys():
             return self.turn_capacity[turn]

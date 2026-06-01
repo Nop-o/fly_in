@@ -7,14 +7,14 @@ class Connection(BaseModel):
     max_link_capacity: int = Field(default=1, ge=0, le=100)
     turn_capacity: dict[int, int] = Field(default_factory=dict)
 
-    def set_current_connection_capacity_per_turn(self, turn: int) -> None:
+    def update_current_drone_count(self, turn: int) -> None:
         """Update/set the number of drone on the connection at a given turn"""
         if turn not in self.turn_capacity.keys():
             self.turn_capacity[turn] = 1
         else:
             self.turn_capacity[turn] += 1
 
-    def get_current_connection_capacity_per_turn(self, turn: int) -> int:
+    def get_current_drone_count(self, turn: int) -> int:
         """Get the number of drone on the connection at a given turn"""
         if turn in self.turn_capacity.keys():
             return self.turn_capacity[turn]
@@ -30,12 +30,12 @@ def main() -> None:
         print(connection.zone_1)
         print(connection.zone_2)
         print(connection.max_link_capacity)
-        print(connection.get_current_connection_capacity_per_turn(1))
-        connection.set_current_connection_capacity_per_turn(1)
-        print(connection.get_current_connection_capacity_per_turn(1))
-        connection.set_current_connection_capacity_per_turn(1)
-        connection.set_current_connection_capacity_per_turn(1)
-        print(connection.get_current_connection_capacity_per_turn(1))
+        print(connection.get_current_drone_count(1))
+        connection.update_current_drone_count(1)
+        print(connection.get_current_drone_count(1))
+        connection.update_current_drone_count(1)
+        connection.update_current_drone_count(1)
+        print(connection.get_current_drone_count(1))
     except ValidationError as e:
         print(e.errors()[0]["msg"].replace("Value error, ", ""))
     except Exception as e:
