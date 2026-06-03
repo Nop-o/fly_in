@@ -1,5 +1,6 @@
 *.lock
 fly_in_venv/
+*.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
