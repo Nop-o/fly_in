@@ -13,7 +13,7 @@ class Hub(BaseModel):
     zone: ZoneType = Field(default=ZoneType.NORMAL)
     color: str = Field(default="red", min_length=3, max_length=20)
     max_drones: int = Field(default=1, ge=0, le=100)
-    neighbors: dict[str, Any] = Field(default_factory=dict)
+    neighbors: list[dict[str, Any]] = Field(default_factory=list)
     turn_capacity: dict[int, int] = Field(default_factory=dict)
 
     @model_validator(mode='before')
@@ -57,7 +57,7 @@ class Hub(BaseModel):
 
     def is_hub_accessible(self, turn: int) -> bool:
         """See if a drone can access the hub."""
-        if hub.zone == ZoneType.RESTRICTED:
+        if self.zone == ZoneType.RESTRICTED:
             turn += 1
 
         return self.max_drones > self.get_current_drone_count(turn)

@@ -51,7 +51,7 @@ class Drone(BaseModel):
 
     def print_current_position_and_id(self, turn: int) -> None:
         """Print the turn output of the drone (current position with ID)"""
-        print(f"D{self.id}-{self.solution[turn].name} ", end="")
+        print(f"D{self.id}-{self.solution[turn][0]} ", end="")
 
     def update_position(self, turn: int) -> None:
         self.position.clear()

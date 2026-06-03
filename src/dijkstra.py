@@ -1,5 +1,4 @@
 from hub import Hub
-from connection import Connection
 from zone_type import ZoneType
 from typing import Any
 import heapq
@@ -9,9 +8,7 @@ class Dijkstra:
     def __init__(self, start: Hub, exit: Hub) -> None:
         self.start: Hub = start
         self.exit: Hub = exit
-        self.solution: dict[str, Any] = {
-            "path": [],
-            "score": 0}
+        self.solution_path: tuple[str, tuple[int, int]] = {}
 
     def find_solution_and_update_hub_capacity(self, hubs: list[Hub]) -> None:
         """
@@ -19,12 +16,22 @@ class Dijkstra:
         If two paths take the same time, take the one with the
         highest priority.
         """
-        self.solution = self.find_solution(hubs)
-        self.update_hub_connection_capacity(self.solution)
+        solutions: dict[str, dict[str, Any]] = self.find_solution(hubs)
+        self.get_solution_path(solutions)
+        self.update_hub_connection_capacity(hubs)
 
-        return self.solution
+        return self.solution_path
 
-    def find_solution(self, hubs: dict[str, Hub]) -> dict[int, Hub | Connection]:
+    def get_solution_path(
+            self, end_solution: dict[str, dict[str, Any]]) -> None:
+        current: dict[str, Any] = end_solution
+
+        while current is not None:
+            self.solution_path[current["distance"]] = [current["hub_name"],
+                                                       current["position"]]
+            current = current["previous"]
+
+    def find_solution(self, hubs: dict[str, Hub]) -> dict[str, dict[str, Any]]:
         """
         Dijkstra algorithm:
             - on a graph, each points have a weight (init to inf)
@@ -34,88 +41,103 @@ class Dijkstra:
             - returns a dict with the current turn as a key and the position
               of the drone
         """
-        print("hello")
-        print(hubs)
         solution: dict[str, dict[str, Any]] = {
-            hub.name: {
-                "turn": 0,
+            hub_name: {
                 "distance": float('inf'),
-                "priority": 0,
-                "path": [],
-             } for hub in hubs
+                "position": None,
+                "hub_name": None,
+                "previous": None,
+             } for hub_name in hubs.keys()
             }
-        turn: int = 0
-        queue = [(0, 0, self.start)]
+        queue = [(0, 0, 0, self.start)]
+
+        solution[self.start.name]["distance"] = 0
+        solution[self.start.name]["position"] = self.start.coordinates
+        solution[self.start.name]["hub_name"] = self.start.name
 
         while queue:
-            distance, priority, hub = heapq.heappop(queue)
-            turn += 1
-
+            distance, priority, tie_breaker, hub = heapq.heappop(queue)
             if distance > solution[hub.name]["distance"]:
                 continue
 
             for neighbor in hub.neighbors:
-                weight = Dijkstra.get_travel_time(
-                        hub, neighbor, turn, distance,
-                        solution[neighbor.name]["distance"])
-                turn += weight
-                distance = distance + weight + neighbor.get_hub_weight()
+                stop_time = Dijkstra.get_stop_time(
+                        hub, neighbor, distance,
+                        solution[neighbor["hub"].name]["distance"])
+
+                new_distance = (distance + stop_time
+                                + neighbor["hub"].get_hub_weight())
 
                 if Dijkstra.is_the_new_path_better(
-                        distance, priority, solution[neighbor.name]):
+                       new_distance, priority, solution[neighbor["hub"].name]):
 
-                    if neighbor.zone_type == ZoneType.PRIORITY:
+                    if neighbor["hub"].zone == ZoneType.PRIORITY:
                         priority -= 1
 
-                    solution[neighbor.name]["turn"] = turn
-                    solution[neighbor.name]["distance"] = distance
-                    solution[neighbor.name]["priority"] = priority
-                    solution[neighbor.name]["path"].append(neighbor)
+                    solution[neighbor["hub"].name]["distance"] = new_distance
+                    solution[neighbor["hub"].name]["previous"] = solution[
+                        hub.name]
+                    solution[neighbor["hub"].name]["position"] = neighbor[
+                        "hub"].coordinates
+                    solution[neighbor["hub"].name]["hub_name"] = neighbor[
+                        "hub"].name
+                    tie_breaker += 1
 
-                    heapq.heappush(queue, (distance, priority, neighbor))
+                    heapq.heappush(queue, (new_distance, priority, tie_breaker,
+                                           neighbor["hub"]))
 
-        return solution["path"][self.exit.name]
+        return solution[self.exit.name]
 
     @staticmethod
-    def get_travel_time(hub: Hub, neighbor: Hub, turn: int,
-                        distance: int, shortest_distance: int
-                        ) -> int | float:
+    def get_stop_time(hub: Hub, neighbor: dict[str, Any],
+                      distance: int, shortest_distance: int
+                      ) -> int | float:
         """Find the cost of traveling to the next hub."""
-        travel_time: int | float = 0
-        connection: Connection = hub.neighbors[neighbor.name]["connection"]
+        stop_time: int | float = 0
 
-        if neighbor.type == ZoneType.BLOCKED:
+        if neighbor["hub"].zone == ZoneType.BLOCKED:
             return float('inf')
-        if neighbor.max_drones == 0 or connection.max_link_capacity == 0:
+        if (neighbor["hub"].max_drones == 0 or
+           neighbor["connection"].max_link_capacity == 0):
             return float('inf')
 
-        while (distance + travel_time) <= shortest_distance:
-            if connection.is_connection_accessible(turn):
-                if hub.is_hub_accessible(turn):
+        if shortest_distance == float('inf'):
+            return 0
+
+        while (distance + stop_time) <= shortest_distance:
+            if neighbor["connection"].is_connection_accessible(distance +
+                                                               stop_time):
+                if neighbor["hub"].is_hub_accessible(distance + stop_time):
                     break
-            turn += 1
-            travel_time += 1
+            stop_time += 1
+        return stop_time
 
-        return travel_time
+    def update_hub_connection_capacity(self, hubs: list[Hub]) -> None:
+        """Update hub/connection drone count when the drone is visiting it."""
+        turn: int = 0
+        last_hub: Hub | None = None
+
+        while turn in self.solution_path.keys():
+            hub = hubs[self.solution_path[turn][0]]
+
+            hub.update_current_drone_count(turn)
+            if hub.zone == ZoneType.RESTRICTED and turn != 0:
+                if last_hub != hub:
+                    neighbor = next(
+                        n for n in last_hub.neighbors
+                        if n["hub"].name == hub.name
+                    )
+                    neighbor["connection"].update_current_drone_count(turn - 1)
+
+            turn += 1
+            last_hub = hub
 
     @staticmethod
     def is_the_new_path_better(new_distance: int, new_priority: int,
                                best_solution: dict[str, Any]) -> bool:
-        """Decide if the new pqth is better thqn the current best one"""
+        """Decide if the new path is better than the current best one"""
         if new_distance == float('inf'):
             return False
-
         if new_distance == best_solution["distance"]:
             return new_priority < best_solution["priority"]
         return new_distance < best_solution["distance"]
-
-    @staticmethod
-    def update_hub_connection_capacity(
-            path_solution: dict[int, Hub]) -> None:
-        """Update hub/connection drone count when the drone is visiting it."""
-        last_hub: Hub - None = None
-        for turn, hub in path_solution.items():
-            if hub.zone == ZoneType.RESTRICTED:
-                 if last_hub and last_hub != hub:
-                    last_hub["neighbors"]["connection"].update_current_drone_count(turn - 1)
-            position.update_current_drone_count(turn)
