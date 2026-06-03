@@ -22,7 +22,7 @@ class Connection(BaseModel):
 
     def is_connection_accessible(self, turn: int) -> bool:
         """See if a drone can access the connection."""
-        return self.max_drones > self.get_current_drone_count(turn)
+        return self.max_link_capacity > self.get_current_drone_count(turn)
 
 
 def main() -> None:
@@ -31,14 +31,14 @@ def main() -> None:
             zone_1="zone1",
             zone_2="zone2",
         )
-        print(connection.zone_1)
-        print(connection.zone_2)
-        print(connection.max_link_capacity)
         print(connection.get_current_drone_count(1))
         connection.update_current_drone_count(1)
+
         print(connection.get_current_drone_count(1))
+
         connection.update_current_drone_count(1)
         connection.update_current_drone_count(1)
+
         print(connection.get_current_drone_count(1))
     except ValidationError as e:
         print(e.errors()[0]["msg"].replace("Value error, ", ""))
