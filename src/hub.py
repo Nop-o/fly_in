@@ -3,7 +3,7 @@ from typing import Any, Annotated
 from zone_type import ZoneType
 
 
-Coordinate = Annotated[int, Field(ge=0, le=200)]
+Coordinate = Annotated[int, Field(ge=-200, le=200)]
 
 
 class Hub(BaseModel):
@@ -36,6 +36,7 @@ class Hub(BaseModel):
 
     def update_current_drone_count(self, turn: int) -> None:
         """Update/set the number of drone on the hub at a given turn"""
+
         if turn not in self.turn_capacity.keys():
             self.turn_capacity[turn] = 1
         else:
@@ -43,9 +44,9 @@ class Hub(BaseModel):
 
     def get_current_drone_count(self, turn: int) -> int:
         """Get the number of drone on the hub at a given turn"""
-        if turn in self.turn_capacity.keys():
-            return self.turn_capacity[turn]
-        return 0
+        if turn not in self.turn_capacity.keys():
+            return 0
+        return self.turn_capacity[turn]
 
     def get_hub_weight(self) -> int | float:
         """Get the weight of coming to the hub."""
@@ -57,9 +58,6 @@ class Hub(BaseModel):
 
     def is_hub_accessible(self, turn: int) -> bool:
         """See if a drone can access the hub."""
-        if self.zone == ZoneType.RESTRICTED:
-            turn += 1
-
         return self.max_drones > self.get_current_drone_count(turn)
 
 

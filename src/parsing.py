@@ -109,7 +109,7 @@ class ValidateData:
         zone_name: set[str], value: str, line: int
     ) -> dict[str, str]:
         """Verify that the possible connection is valid."""
-        connection: dict[str, str] = {
+        connection: dict[str, Any] = {
             "zone_1": None,
             "zone_2": None,
             "max_link_capacity": 1,
@@ -161,7 +161,7 @@ class ValidateData:
         key: str, value: str, line: int, drone_count: str
     ) -> dict[str, str]:
         """Verify that the possible hub is valid."""
-        hub: dict[str, str] = {
+        hub: dict[str, Any] = {
             "name": None,
             "coordinates": None,
             "zone": "normal",

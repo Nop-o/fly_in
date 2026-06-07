@@ -12,7 +12,7 @@ class Drone(BaseModel):
 
     id: int = Field(ge=1, le=100)
     solution: list[Hub] = Field(default_factory=list)
-    position: list[Coordinate, Coordinate] = Field(default_factory=list)
+    position: list[Coordinate] = Field(default_factory=list)
 
     def get_path_solution(self, hubs: dict[str, Hub], start_hub: Hub,
                           end_hub: Hub) -> None:

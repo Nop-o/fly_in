@@ -1,5 +1,6 @@
 from parsing import ValidateData
 from drone_map import DroneMap
+from visual_simulation import VisualSimulation
 
 
 def main() -> None:
@@ -7,19 +8,25 @@ def main() -> None:
         from pydantic import ValidationError
     except ModuleNotFoundError:
         print("Import error: pydantic is not installed, run the "
-                "'make install' command first")
+              "'make install' command first")
         return
 
     try:
-        file_content: ValidateData = ValidateData("src/test.txt")
+        file_content: ValidateData = ValidateData(
+            "maps/challenger/01_the_impossible_dream.txt")
         parsed_data = file_content.parse_file_content()
+
         drone_map = DroneMap(**parsed_data)
         drone_map.create_drones()
+
     except ValidationError as e:
         print(e.errors()[0]['msg'].replace("Value error, ", ""))
 
     drone_map.update_all_solution()
-    print(drone)
+    drones_solutions = [drone.solution for drone in drone_map.drones]
+
+    simulation = VisualSimulation(drones_solutions, drone_map)
+    simulation.run()
 
 
 if __name__ == "__main__":
