@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, ValidationError, model_validator
 from typing import Any, Annotated
 from .zone_type import ZoneType
+from .colors import Colors
 
 
 Coordinate = Annotated[int, Field(ge=-200, le=200)]
@@ -11,7 +12,7 @@ class Hub(BaseModel):
     name: str = Field(min_length=3, max_length=20)
     coordinates: tuple[Coordinate, Coordinate]
     zone: ZoneType = Field(default=ZoneType.NORMAL)
-    color: str = Field(default="red", min_length=3, max_length=20)
+    color: Colors = Field(default=Colors.GREEN)
     max_drones: int = Field(default=1, ge=0, le=100)
     neighbors: list[dict[str, Any]] = Field(default_factory=list)
     turn_capacity: dict[int, int] = Field(default_factory=dict)
@@ -32,6 +33,27 @@ class Hub(BaseModel):
         else:
             raise ValueError("Hub error: impossible zone type for "
                              f"{data['name']}")
+        return data
+
+    @model_validator(mode='before')
+    @classmethod
+    def _update_color(cls, data: dict[str, Any]) -> dict[str, Any]:
+        if "color" not in data.keys():
+            if data["zone"] == ZoneType.BLOCKED:
+                data["color"] = Colors.RED
+            elif data["zone"] == ZoneType.NORMAL:
+                data["color"] = Colors.GREEN
+            elif data["zone"] == ZoneType.RESTRICTED:
+                data["color"] = Colors.YELLOW
+            elif data["zone"] == ZoneType.PRIORITY:
+                data["color"] = Colors.LIGHT_BLUE
+        else:
+            try:
+                data["color"] = Colors[data["color"].upper()]
+            except KeyError:
+                raise ValueError(f"Color error: {data['color']} "
+                                 "isn't a valid color")
+
         return data
 
     def update_current_drone_count(self, turn: int) -> None:
