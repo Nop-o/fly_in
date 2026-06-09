@@ -1,6 +1,4 @@
 from parsing import ValidateData
-from drone_map import DroneMap
-from visual_simulation import VisualSimulation
 
 
 def main() -> None:
@@ -10,6 +8,8 @@ def main() -> None:
         print("Import error: pydantic is not installed, run the "
               "'make install' command first")
         return
+
+    from drone_map import DroneMap
 
     try:
         file_content: ValidateData = ValidateData(
@@ -25,8 +25,14 @@ def main() -> None:
     drone_map.update_all_solution()
     drones_solutions = [drone.solution for drone in drone_map.drones]
 
-    simulation = VisualSimulation(drones_solutions, drone_map)
-    simulation.run()
+    try:
+        from visual_simulation import VisualSimulation
+
+        simulation = VisualSimulation(drones_solutions, drone_map)
+        simulation.run()
+    except ModuleNotFoundError:
+        print("Import error: pygame is not installed, run the "
+              "'make install' command first")
 
 
 if __name__ == "__main__":

@@ -22,8 +22,6 @@ class ValidateData:
         """
         parsed_data: dict[str, Any] = {
             "nb_drones": 1,
-            "start_hub": None,
-            "end_hub": None,
             "hub": {},
             "connection": [],
             "drones": [],
@@ -82,17 +80,17 @@ class ValidateData:
 
             if key == "connection":
                 parsed_data[key].append(
-                    ValidateData.verify_connection(zone_name, value, i)
+                    ValidateData._verify_connection(zone_name, value, i)
                 )
             elif key == "hub":
-                new_hub = ValidateData.verify_hub(zone_name, coordinates,
-                                                  key, value, i,
-                                                  parsed_data["nb_drones"])
+                new_hub = ValidateData._verify_hub(zone_name, coordinates,
+                                                   key, value, i,
+                                                   parsed_data["nb_drones"])
                 parsed_data[key][new_hub["name"]] = new_hub
             elif key == "nb_drones":
                 parsed_data[key] = value.strip()
             else:
-                parsed_data[key] = ValidateData.verify_hub(
+                parsed_data[key] = ValidateData._verify_hub(
                                         zone_name, coordinates, key, value,
                                         i, parsed_data["nb_drones"])
 
@@ -105,13 +103,11 @@ class ValidateData:
         return parsed_data
 
     @staticmethod
-    def verify_connection(
+    def _verify_connection(
         zone_name: set[str], value: str, line: int
     ) -> dict[str, str]:
         """Verify that the possible connection is valid."""
         connection: dict[str, Any] = {
-            "zone_1": None,
-            "zone_2": None,
             "max_link_capacity": 1,
             "turn_capacity": {},
         }
@@ -138,8 +134,8 @@ class ValidateData:
                     f"(line {line})"
                 )
             zone2, metadata = split_metadata[0], split_metadata[1]
-            connection.update(ValidateData.verify_metadata("connection",
-                                                           metadata, line))
+            connection.update(ValidateData._verify_metadata("connection",
+                                                            metadata, line))
         connection["zone_1"] = zone1
         connection["zone_2"] = zone2
 
@@ -156,14 +152,12 @@ class ValidateData:
         return connection
 
     @staticmethod
-    def verify_hub(
+    def _verify_hub(
         zone_name: set[str], coordinates: set[tuple[str, str]],
         key: str, value: str, line: int, drone_count: str
     ) -> dict[str, str]:
         """Verify that the possible hub is valid."""
         hub: dict[str, Any] = {
-            "name": None,
-            "coordinates": None,
             "zone": "normal",
             "color": "red",
             "max_drones": '1',
@@ -177,8 +171,7 @@ class ValidateData:
             )
 
         data = value.strip().split(" ", 3)
-        if (len(data) < 3 or not data[0] or (not data[1] and data[1] != "0") or
-           (not data[2] and data[2] != "0")):
+        if len(data) < 3 or not data[0] or data[1] == "" or data[2] == "":
             raise ValueError(
                 f"Wrong file input: not enough data given (line {line})"
             )
@@ -187,7 +180,7 @@ class ValidateData:
         hub["coordinates"] = (data[1], data[2])
         if len(data) == 4:
             metadata = data[3]
-            hub.update(ValidateData.verify_metadata(key, metadata, line))
+            hub.update(ValidateData._verify_metadata(key, metadata, line))
 
         if key in ["start_hub", "end_hub"] and "max_drones" not in metadata:
             hub["max_drones"] = drone_count
@@ -213,7 +206,8 @@ class ValidateData:
         return hub
 
     @staticmethod
-    def verify_metadata(key: str, metadatas: str, line: int) -> dict[str, str]:
+    def _verify_metadata(key: str, metadatas: str,
+                         line: int) -> dict[str, str]:
         """Verify that the possible metadata is valid."""
         parsed_metadata: dict[str, str] = {}
 

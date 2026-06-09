@@ -5,46 +5,45 @@ import heapq
 
 
 class Dijkstra:
-    def __init__(self, start: Hub, exit: Hub) -> None:
+    def __init__(self, start: Hub, exit: Hub, hubs: dict[str, Any]) -> None:
         self.start: Hub = start
         self.exit: Hub = exit
-        self.solution_path: dict[str, Any] = {}
+        self.hubs: dict[str, Any] = hubs
+        self.solution_path: dict[int, tuple[str, tuple[int, int]]] = {}
 
     def find_solution_and_update_hub_capacity(
-            self, hubs: dict[str, Any]
-            ) -> dict[int, tuple[str, tuple[int, int]]]:
+            self) -> dict[int, tuple[str, tuple[int, int]]]:
         """
         Find the shortest path between the entry and the exit.
         If two paths take the same time, take the one with the
         highest priority.
         """
-        solution: dict[str, Any] = self.find_solution(hubs)
-        self.get_solution_path(solution)
-        print(self.solution_path)
+        solution: dict[str, Any] = self._find_solution()
+        self._get_solution_path(solution)
 
-        self.update_hub_connection_capacity(hubs)
+        self._update_hub_connection_capacity()
 
         return self.solution_path
 
-    def get_solution_path(
+    def _get_solution_path(
             self, end_solution: dict[str, Any]) -> None:
         current: dict[str, Any] = end_solution
 
         while current is not None:
-            self.solution_path[current["distance"]] = [current["hub_name"],
-                                                       current["position"]]
+            self.solution_path[current["distance"]] = (current["hub_name"],
+                                                       current["position"])
 
             stop_time = current.get("stop_time", 0)
             if current["previous"] is not None and stop_time > 0:
                 for wait_turn in range(current["distance"] - stop_time,
                                        current["distance"]):
-                    self.solution_path[wait_turn] = [
+                    self.solution_path[wait_turn] = (
                         current["previous"]["hub_name"],
                         current["previous"]["position"]
-                    ]
+                    )
             current = current["previous"]
 
-    def find_solution(self, hubs: dict[str, Hub]) -> dict[str, dict[str, Any]]:
+    def _find_solution(self) -> dict[str, dict[str, Any]]:
         """
         Dijkstra algorithm:
             - on a graph, each points have a weight (init to inf)
@@ -62,7 +61,7 @@ class Dijkstra:
                 "previous": None,
                 "priority": None,
                 "stop_time": 0,
-             } for hub_name in hubs.keys()
+             } for hub_name in self.hubs.keys()
             }
         queue = [(0, 0, 0, self.start)]
 
@@ -79,13 +78,13 @@ class Dijkstra:
 
             for neighbor in hub.neighbors:
                 new_distance = distance + neighbor["hub"].get_hub_weight()
-                stop_time = Dijkstra.get_stop_time(
+                stop_time = Dijkstra._get_stop_time(
                     hub, neighbor, new_distance,
                     solution[neighbor["hub"].name]["distance"]
                 )
                 new_distance += stop_time
 
-                if Dijkstra.is_the_new_path_better(
+                if Dijkstra._is_the_new_path_better(
                        new_distance, priority, solution[neighbor["hub"].name]):
 
                     tie_breaker += 1
@@ -108,10 +107,31 @@ class Dijkstra:
 
         return solution[self.exit.name]
 
+    def _update_hub_connection_capacity(self) -> None:
+        """Update hub/connection drone count when the drone is visiting it."""
+        last_hub: Hub = self.start
+
+        for turn in sorted(self.solution_path.keys()):
+            hub = self.hubs[self.solution_path[turn][0]]
+
+            hub.update_current_drone_count(turn)
+
+            if last_hub != hub:
+                neighbor = next(
+                    n for n in last_hub.neighbors
+                    if n["hub"].name == hub.name
+                )
+                if hub.zone == ZoneType.RESTRICTED:
+                    neighbor["connection"].update_current_drone_count(turn - 1)
+                else:
+                    neighbor["connection"].update_current_drone_count(turn)
+
+            last_hub = hub
+
     @staticmethod
-    def get_stop_time(hub: Hub, neighbor: dict[str, Any],
-                      distance: int, shortest_distance: int
-                      ) -> int | float:
+    def _get_stop_time(hub: Hub, neighbor: dict[str, Any],
+                       distance: int, shortest_distance: int
+                       ) -> int | float:
         """Find the cost of traveling to the next hub."""
         stop_time: int | float = 0
 
@@ -129,30 +149,9 @@ class Dijkstra:
             stop_time += 1
         return stop_time
 
-    def update_hub_connection_capacity(self, hubs: dict[str, Any]) -> None:
-        """Update hub/connection drone count when the drone is visiting it."""
-        last_hub: Hub = self.start
-
-        for turn in sorted(self.solution_path.keys()):
-            hub = hubs[self.solution_path[turn][0]]
-
-            hub.update_current_drone_count(turn)
-
-            if last_hub != hub:
-                neighbor = next(
-                    n for n in last_hub.neighbors
-                    if n["hub"].name == hub.name
-                )
-                if hub.zone == ZoneType.RESTRICTED:
-                    neighbor["connection"].update_current_drone_count(turn - 1)
-                else:
-                    neighbor["connection"].update_current_drone_count(turn)
-
-            last_hub = hub
-
     @staticmethod
-    def is_the_new_path_better(new_distance: int, new_priority: int,
-                               best_solution: dict[str, Any]) -> bool:
+    def _is_the_new_path_better(new_distance: int, new_priority: int,
+                                best_solution: dict[str, int]) -> bool:
         """Decide if the new path is better than the current best one"""
         if new_distance == float('inf'):
             return False

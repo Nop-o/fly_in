@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field, ValidationError, model_validator
-from typing import Optional
 from drone import Drone
 from hub import Hub
 from connection import Connection
@@ -10,9 +9,9 @@ class DroneMap(BaseModel):
     nb_drones: int = Field(ge=1, le=100)
     start_hub: Hub
     end_hub: Hub
-    hub: Optional[dict[str, Hub]]
-    connection: Optional[list[Connection]]
-    drones: Optional[list[Drone]] = Field(default_factory=list)
+    hub: dict[str, Hub]
+    connection: list[Connection]
+    drones: list[Drone] = Field(default_factory=list)
 
     @model_validator(mode='after')
     def add_start_end_hub_to_hub(self) -> "DroneMap":
@@ -55,24 +54,18 @@ class DroneMap(BaseModel):
 
     def create_drones(self) -> None:
         """Call the drone factory to create the drones"""
-        self.drones = Drone.drone_factory(self.nb_drones, self.start_hub)
+        self.drones = Drone.drone_factory(self.nb_drones)
 
     def update_all_solution(self) -> None:
         """Get the drones shortest path from entry to exit"""
         for drone in self.drones:
             drone.get_path_solution(self.hub, self.start_hub, self.end_hub)
 
-    def simulate_turn(self) -> None:
-        """Simulate a turn for all drones"""
-        for drone in self.drones:
-            drone.simulate_turn()
-        print()
-
-    def simulate_reverse_turn(self) -> None:
+    def print_all_drone_position_and_id(self, turn: int) -> None:
         """Simulate a reverse turn for all drones"""
         for drone in self.drones:
-            drone.simulate_reverse_turn()
-        print()
+            drone.print_current_position_and_id(turn)
+        print("\n")
 
 
 DroneMap.model_rebuild()

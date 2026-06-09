@@ -35,7 +35,7 @@ clean:
 
 lint:
 	$(PYTHON) -m flake8 . --exclude=$(VENV)
-	mypy . --warn-unused-ignores \
+	mypy src --warn-unused-ignores \
 	        --warn-return-any \
 	        --ignore-missing-imports \
 	        --disallow-untyped-defs \
@@ -43,7 +43,7 @@ lint:
 
 lint-strict:
 	$(PYTHON) -m flake8 . --exclude=$(VENV)
-	mypy	--strict .
+	mypy	--strict src
 
 .PHONY: install run debug clean lint lint-strict help
 

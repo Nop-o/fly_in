@@ -66,7 +66,8 @@ Hub.model_rebuild()
 
 def main() -> None:
     try:
-        hub = Hub(name="z1h1", coordinates=[1, 0])
+        hub = Hub(name="z1h1",
+                  coordinates=(1, 0))
         print(hub.name)
         print(hub.zone.value)
         print(hub.coordinates)
