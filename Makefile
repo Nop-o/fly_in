@@ -1,5 +1,4 @@
 PYTHON = python3
-MAIN = src/fly_in.py
 VENV = fly_in_venv
 
 .SILENT:
@@ -23,10 +22,10 @@ install:
 	@echo "source $(VENV)/bin/activate"
 
 run:
-	$(VENV)/bin/python $(MAIN) $(INPUT)
+	$(VENV)/bin/python -m src.fly_in $(INPUT)
 
 debug:
-	$(VENV)/bin/python -m pdb $(MAIN) $(INPUT)
+	$(VENV)/bin/python -m pdb -m src.fly_in $(INPUT)
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +

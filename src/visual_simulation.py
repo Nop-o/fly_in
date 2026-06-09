@@ -1,7 +1,8 @@
 import pygame
 import math
 from typing import Any
-from screen import Screen
+from .screen import Screen
+from .hub import Hub
 
 
 class VisualSimulation:
@@ -56,10 +57,10 @@ class VisualSimulation:
         except Exception:
             pass
 
-    def _get_all_coords(self) -> list[tuple]:
+    def _get_all_coords(self) -> list[tuple[int, int]]:
         return [hub.coordinates for hub in self._all_hubs().values()]
 
-    def _all_hubs(self) -> dict:
+    def _all_hubs(self) -> dict[str, Hub]:
         hubs = {}
         if self.drone_map.hub:
             hubs.update(self.drone_map.hub)
@@ -184,7 +185,8 @@ class VisualSimulation:
             pygame.draw.circle(self.screen.screen, border_color,
                                pos, radius, 2)
 
-    def _interpolate_drone_pos(self, sol: dict,
+    def _interpolate_drone_pos(self,
+                               sol: dict[int, tuple[str, tuple[int, int]]],
                                turn: float) -> tuple[int, int] | None:
         turns = sorted(sol.keys())
         if not turns:

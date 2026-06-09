@@ -1,5 +1,5 @@
 from src.connection import Connection
-from dijkstra import Dijkstra
+from src.dijkstra import Dijkstra
 from src.drone_map import DroneMap
 from src.drone import Drone
 from src.hub import Hub

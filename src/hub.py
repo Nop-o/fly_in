@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, ValidationError, model_validator
 from typing import Any, Annotated
-from zone_type import ZoneType
+from .zone_type import ZoneType
 
 
 Coordinate = Annotated[int, Field(ge=-200, le=200)]

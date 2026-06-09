@@ -1,7 +1,8 @@
 from pydantic import BaseModel, Field, ValidationError, model_validator
-from drone import Drone
-from hub import Hub
-from connection import Connection
+from .drone import Drone
+from .hub import Hub
+from .connection import Connection
+from .zone_type import ZoneType
 
 
 class DroneMap(BaseModel):
@@ -27,8 +28,10 @@ class DroneMap(BaseModel):
             raise ValueError("Connection error: no connections created")
 
         for road in self.connection:
-            if (self.hub[road.zone_1] in self.hub[road.zone_2].neighbors or
-               self.hub[road.zone_2] in self.hub[road.zone_1].neighbors):
+            if (any(neighbor["hub"] == self.hub[road.zone_1]
+                    for neighbor in self.hub[road.zone_2].neighbors) or
+                any(neighbor["hub"] == self.hub[road.zone_2]
+                    for neighbor in self.hub[road.zone_1].neighbors)):
                 raise ValueError("Connection error: multiple connections are "
                                  f"between {road.zone_1} and "
                                  f"{road.zone_2}")
@@ -76,30 +79,25 @@ def main() -> None:
         drone_map = DroneMap(
             nb_drones=5,
             start_hub=Hub(
-                hub_type="normal",
                 name="start",
-                coordinates=['4', '3'],
-                zone="normal",
+                coordinates=(4, 3),
+                zone=ZoneType.NORMAL,
                 color="red",
                 max_drones=50,
-                neighbors=[],
             ),
             end_hub=Hub(
-                hub_type="normal",
                 name="goal",
-                coordinates=['4', '2'],
-                zone="normal",
+                coordinates=(4, 2),
+                zone=ZoneType.NORMAL,
                 color="red",
                 max_drones=50,
-                neighbors=[],
             ),
             hub={"hub1": Hub(
                 name="hub1",
-                coordinates=['4', '1'],
-                zone="normal",
+                coordinates=(4, 1),
+                zone=ZoneType.NORMAL,
                 color="red",
                 max_drones=50,
-                neighbors=[],
             )},
             connection=[
                 Connection(

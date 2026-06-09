@@ -1,4 +1,4 @@
-from parsing import ValidateData
+from .parsing import ValidateData
 
 
 def main() -> None:
@@ -9,7 +9,7 @@ def main() -> None:
               "'make install' command first")
         return
 
-    from drone_map import DroneMap
+    from .drone_map import DroneMap
 
     try:
         file_content: ValidateData = ValidateData(
@@ -26,7 +26,7 @@ def main() -> None:
     drones_solutions = [drone.solution for drone in drone_map.drones]
 
     try:
-        from visual_simulation import VisualSimulation
+        from .visual_simulation import VisualSimulation
 
         simulation = VisualSimulation(drones_solutions, drone_map)
         simulation.run()

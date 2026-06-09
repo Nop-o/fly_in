@@ -1,5 +1,5 @@
-from hub import Hub
-from zone_type import ZoneType
+from .hub import Hub
+from .zone_type import ZoneType
 from typing import Any
 import heapq
 
