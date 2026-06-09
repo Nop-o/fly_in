@@ -3,6 +3,8 @@ import math
 from typing import Any
 from .screen import Screen
 from .hub import Hub
+from .colors import Colors
+from .drone_map import DroneMap
 
 
 class VisualSimulation:
@@ -17,8 +19,8 @@ class VisualSimulation:
 
     def __init__(self,
                  drone_solutions: list[dict[int, tuple[str, tuple[int, int]]]],
-                 drone_map: Any) -> None:
-        self.solutions = drone_solutions
+                 drone_map: DroneMap) -> None:
+        self.drone_solutions = drone_solutions
         self.current_turn = 0
         self.max_turn = self._get_max_turn()
         self.drone_map = drone_map
@@ -29,33 +31,27 @@ class VisualSimulation:
         self.hovered_connection: Any = None
         self.mouse_pos: tuple[int, int] = (0, 0)
 
-        all_coords = self._get_all_coords()
-        self.min_x = min(c[0] for c in all_coords)
-        self.min_y = min(c[1] for c in all_coords)
-        self.max_x = max(c[0] for c in all_coords)
-        self.max_y = max(c[1] for c in all_coords)
+        all_coordinates = self._get_all_coords()
+        self.min_x = min(coordinate[0] for coordinate in all_coordinates)
+        self.min_y = min(coordinate[1] for coordinate in all_coordinates)
+        self.max_x = max(coordinate[0] for coordinate in all_coordinates)
+        self.max_y = max(coordinate[1] for coordinate in all_coordinates)
 
     def _get_max_turn(self) -> int:
-        if not self.solutions:
+        if not self.drone_solutions:
             return 0
 
-        return max(turn for solution in self.solutions
+        return max(turn for solution in self.drone_solutions
                    for turn in solution.keys())
 
     def _adjust_screen_height(self) -> None:
         """Resize the pygame window so it fits within the physical display."""
-        try:
-            info = pygame.display.Info()
-            max_h = int(info.current_h * 0.88)
-            if self.screen.height > max_h:
-                new_surface = pygame.display.set_mode(
-                    (self.screen.width, max_h),
-                    pygame.RESIZABLE | pygame.SCALED
-                    )
-                self.screen.screen = new_surface
-                self.screen.height = max_h
-        except Exception:
-            pass
+        info = pygame.display.Info()
+        if self.screen.height > info.current_h:
+            new_surface = pygame.display.set_mode(
+                (self.screen.width, info.current_h), pygame.RESIZABLE)
+            self.screen.screen = new_surface
+            self.screen.height = info.current_h
 
     def _get_all_coords(self) -> list[tuple[int, int]]:
         return [hub.coordinates for hub in self._all_hubs().values()]
@@ -103,21 +99,21 @@ class VisualSimulation:
     def _drones_at_hub(self, hub_name: str, turn: int) -> list[int]:
         """Return list of drone indices present at hub_name at given turn."""
         result = []
-        for i, sol in enumerate(self.solutions):
-            if turn in sol and sol[turn][0] == hub_name:
+        for i, solution in enumerate(self.drone_solutions):
+            if turn in solution and solution[turn][0] == hub_name:
                 result.append(i)
         return result
 
     def _drones_on_connection(self, connection: Any, turn: int) -> list[int]:
         """Return drone indices currently on this connection at given turn."""
         result = []
-        for i, sol in enumerate(self.solutions):
-            turns = sorted(sol.keys())
+        for i, solution in enumerate(self.drone_solutions):
+            turns = sorted(solution.keys())
             for j in range(len(turns) - 1):
                 t0, t1 = turns[j], turns[j + 1]
                 if t0 <= turn < t1:
-                    h0 = sol[t0][0]
-                    h1 = sol[t1][0]
+                    h0 = solution[t0][0]
+                    h1 = solution[t1][0]
                     if ({h0, h1} == {connection.zone_1, connection.zone_2}):
                         result.append(i)
         return result
@@ -157,58 +153,51 @@ class VisualSimulation:
             p2 = self._to_screen(hubs[connection.zone_2].coordinates)
 
             is_hovered = (self.hovered_connection is connection)
-            color = (180, 180, 80) if is_hovered else Screen.CONNECTION_COLOR
+            color = Colors.ORANGE.value if is_hovered else Colors.PURPLE.value
             width = 5 if is_hovered else 3
             pygame.draw.line(self.screen.screen, color, p1, p2, width)
 
-    def _draw_paths(self) -> None:
-        for i, sol in enumerate(self.solutions):
-            color = Screen.PATH_COLORS[i % len(Screen.PATH_COLORS)]
-            faint = tuple(max(0, c - 150) for c in color)
-            turns = sorted(sol.keys())
-            points = [self._to_screen(sol[t][1]) for t in turns]
-            if len(points) >= 2:
-                pygame.draw.lines(self.screen.screen, faint, False, points, 2)
-
     def _draw_hubs(self) -> None:
+        """Draw hubs into the simulation"""
         hubs = self._all_hubs()
 
         for hub in hubs.values():
             pos = self._to_screen(hub.coordinates)
-            color = Screen.HUB_COLORS.get(hub.color,
-                                          Screen.HUB_COLORS["default"])
             is_hovered = (self.hovered_hub is hub)
             radius = Screen.HUB_RADIUS + (6 if is_hovered else 0)
 
-            border_color = (255, 255, 100) if is_hovered else (255, 255, 255)
-            pygame.draw.circle(self.screen.screen, color, pos, radius)
+            border_color = (Colors.LIGHT_YELLOW.value if is_hovered
+                            else Colors.WHITE.value)
+            pygame.draw.circle(self.screen.screen, hub.color.value,
+                               pos, radius)
             pygame.draw.circle(self.screen.screen, border_color,
                                pos, radius, 2)
 
-    def _interpolate_drone_pos(self,
-                               sol: dict[int, tuple[str, tuple[int, int]]],
-                               turn: float) -> tuple[int, int] | None:
-        turns = sorted(sol.keys())
+    def _interpolate_drone_pos(
+         self, solution: dict[int, tuple[str, tuple[int, int]]], turn: float
+         ) -> tuple[int, int] | None:
+        turns = sorted(solution.keys())
         if not turns:
             return None
         if turn <= turns[0]:
-            return self._to_screen(sol[turns[0]][1])
+            return self._to_screen(solution[turns[0]][1])
         if turn >= turns[-1]:
-            return self._to_screen(sol[turns[-1]][1])
+            return self._to_screen(solution[turns[-1]][1])
         for i in range(len(turns) - 1):
             t0, t1 = turns[i], turns[i + 1]
             if t0 <= turn <= t1:
                 alpha = (turn - t0) / (t1 - t0)
-                p0 = self._to_screen(sol[t0][1])
-                p1 = self._to_screen(sol[t1][1])
+                p0 = self._to_screen(solution[t0][1])
+                p1 = self._to_screen(solution[t1][1])
                 return (int(p0[0] + (p1[0] - p0[0]) * alpha),
                         int(p0[1] + (p1[1] - p0[1]) * alpha))
         return None
 
     def _draw_drones(self) -> None:
-        for i, sol in enumerate(self.solutions):
+        """Draw drones into the simulation"""
+        for i, solution in enumerate(self.drone_solutions):
             color = Screen.PATH_COLORS[i % len(Screen.PATH_COLORS)]
-            pos = self._interpolate_drone_pos(sol, self.current_turn)
+            pos = self._interpolate_drone_pos(solution, self.current_turn)
             if pos is None:
                 continue
 
@@ -223,10 +212,10 @@ class VisualSimulation:
 
             pygame.draw.circle(self.screen.screen, color,
                                pos, Screen.DRONE_RADIUS)
-            pygame.draw.circle(self.screen.screen, (255, 255, 255),
+            pygame.draw.circle(self.screen.screen, Colors.WHITE.value,
                                pos, Screen.DRONE_RADIUS, 2)
 
-            label = self.screen.font.render(f"D{i}", True, (15, 15, 25))
+            label = self.screen.font.render(f"D{i}", True, Colors.BLACK.value)
             self.screen.screen.blit(label, (pos[0] - label.get_width() // 2,
                                             pos[1] - label.get_height() // 2))
 
@@ -278,14 +267,19 @@ class VisualSimulation:
         self.screen.screen.blit(box_surf, (bx, by))
 
         for j, line in enumerate(lines):
-            color = (255, 255, 100) if j == 0 else Screen.TEXT_COLOR
+            color = Colors.LIGHT_YELLOW.value if j == 0 else Colors.GREY.value
             surf = self.screen.font.render(line, True, color)
             self.screen.screen.blit(surf,
                                     (bx + padding, by + padding + j * line_h))
 
     def _draw_ui(self) -> None:
+        """Show simulation information:
+            - title
+            - current turn
+            - possible keyboard command
+        """
         self.screen.draw_text("FLY-IN VISUALIZER", 20, 10,
-                              color=(180, 180, 255),
+                              color=Colors.LIGHT_GREY.value,
                               font=self.screen.title_font)
 
         self.screen.draw_text(f"Turn: {self.current_turn} / {self.max_turn}",
@@ -293,11 +287,19 @@ class VisualSimulation:
 
         self.screen.draw_text(
             "←/→: step  R: restart  ESC: quit",
-            20, self.screen.height - 22, color=(70, 70, 100)
+            20, self.screen.height - 22, color=Colors.GREY.value
         )
 
     def _handle_events(self) -> bool:
+        """
+        Handle the user input:
+            - ESC: Quit simulation
+            - mouse movement
+            - r key: reset the simulation
+            - left/right key: move/move back one turn
+        """
         for event in pygame.event.get():
+
             if event.type == pygame.QUIT:
                 return False
 
@@ -326,6 +328,7 @@ class VisualSimulation:
         return True
 
     def run(self) -> None:
+        """Run the simulation"""
         print()
 
         try:
@@ -336,7 +339,6 @@ class VisualSimulation:
                 self.screen.clear_last_frame()
 
                 self._draw_connections()
-                self._draw_paths()
                 self._draw_hubs()
                 self._draw_drones()
 
