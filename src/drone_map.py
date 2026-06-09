@@ -75,6 +75,8 @@ DroneMap.model_rebuild()
 
 
 def main() -> None:
+    from .colors import Colors
+
     try:
         drone_map = DroneMap(
             nb_drones=5,
@@ -82,21 +84,21 @@ def main() -> None:
                 name="start",
                 coordinates=(4, 3),
                 zone=ZoneType.NORMAL,
-                color="red",
+                color=Colors.GREEN,
                 max_drones=50,
             ),
             end_hub=Hub(
                 name="goal",
                 coordinates=(4, 2),
                 zone=ZoneType.NORMAL,
-                color="red",
+                color=Colors.GREEN,
                 max_drones=50,
             ),
             hub={"hub1": Hub(
                 name="hub1",
                 coordinates=(4, 1),
                 zone=ZoneType.NORMAL,
-                color="red",
+                color=Colors.GREEN,
                 max_drones=50,
             )},
             connection=[
