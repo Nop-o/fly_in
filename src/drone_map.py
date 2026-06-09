@@ -14,13 +14,13 @@ class DroneMap(BaseModel):
     drones: list[Drone] = Field(default_factory=list)
 
     @model_validator(mode='after')
-    def add_start_end_hub_to_hub(self) -> "DroneMap":
+    def _add_start_end_hub_to_hub(self) -> "DroneMap":
         self.hub[self.start_hub.name] = self.start_hub
         self.hub[self.end_hub.name] = self.end_hub
         return self
 
     @model_validator(mode='after')
-    def update_hub_neighbors(self) -> "DroneMap":
+    def _update_hub_neighbors(self) -> "DroneMap":
         """Verify if there is connections duplicate"""
 
         if not self.connection:
@@ -40,7 +40,7 @@ class DroneMap(BaseModel):
         return self
 
     @model_validator(mode='after')
-    def verify_entry_exit_max_drones(self) -> "DroneMap":
+    def _verify_entry_exit_max_drones(self) -> "DroneMap":
         """Verify if entry/exit can support all the drones at once"""
         if self.nb_drones > self.start_hub.max_drones:
             raise ValueError("Hub error: start hub can't support "

@@ -3,10 +3,11 @@ from typing import Any
 
 class ValidateData:
     def __init__(self, file_name: str) -> None:
-        self.file_content: list[str] = ValidateData.get_file_content(file_name)
+        self.file_content: list[str] = ValidateData._get_file_content(
+            file_name)
 
     @staticmethod
-    def get_file_content(file_name: str) -> list[str]:
+    def _get_file_content(file_name: str) -> list[str]:
         """Open the file given in argument and retriewe it's content"""
         with open(file_name, "r") as file:
             content = file.readlines()

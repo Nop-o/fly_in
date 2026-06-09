@@ -9,10 +9,9 @@ class VisualSimulation:
     Visualizes drone paths on a map using pygame.
 
     Controls:
-        SPACE       : pause / resume
+        LEFT/RIGHT  : step back/forward one turn
+        ESC         : exit simulation
         R           : restart
-        LEFT/RIGHT  : step back / forward one turn (auto-pauses)
-        ESC         : quit
     """
 
     def __init__(self,
@@ -35,10 +34,6 @@ class VisualSimulation:
         self.max_x = max(c[0] for c in all_coords)
         self.max_y = max(c[1] for c in all_coords)
 
-        self.max_turn = max(
-            max(sol.keys()) for sol in self.solutions if sol
-        )
-
     def _get_max_turn(self) -> int:
         if not self.solutions:
             return 0
@@ -53,8 +48,9 @@ class VisualSimulation:
             max_h = int(info.current_h * 0.88)
             if self.screen.height > max_h:
                 new_surface = pygame.display.set_mode(
-                    (self.screen.width, max_h)
-                )
+                    (self.screen.width, max_h),
+                    pygame.RESIZABLE | pygame.SCALED
+                    )
                 self.screen.screen = new_surface
                 self.screen.height = max_h
         except Exception:
@@ -176,7 +172,7 @@ class VisualSimulation:
     def _draw_hubs(self) -> None:
         hubs = self._all_hubs()
 
-        for name, hub in hubs.items():
+        for hub in hubs.values():
             pos = self._to_screen(hub.coordinates)
             color = Screen.HUB_COLORS.get(hub.color,
                                           Screen.HUB_COLORS["default"])
@@ -294,7 +290,7 @@ class VisualSimulation:
                               self.screen.width - 200, 10)
 
         self.screen.draw_text(
-            "SPACE: pause  ←/→: step  R: restart  ESC: quit",
+            "←/→: step  R: restart  ESC: quit",
             20, self.screen.height - 22, color=(70, 70, 100)
         )
 
@@ -335,7 +331,7 @@ class VisualSimulation:
 
                 self._update_hover()
 
-                self.screen.clear()
+                self.screen.clear_last_frame()
 
                 self._draw_connections()
                 self._draw_paths()
@@ -344,8 +340,8 @@ class VisualSimulation:
 
                 self._draw_ui()
                 self._draw_tooltip()
-                self.screen.flip()
-                self.screen.tick(60)
+                self.screen.display_on_screen()
+                self.screen.set_fps(60)
 
         except KeyboardInterrupt:
-            self.screen.quit()
+            self.screen.exit_simulation()

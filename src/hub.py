@@ -18,7 +18,7 @@ class Hub(BaseModel):
 
     @model_validator(mode='before')
     @classmethod
-    def update_zone(cls, data: dict[str, Any]) -> dict[str, Any]:
+    def _update_zone(cls, data: dict[str, Any]) -> dict[str, Any]:
         """Update the hub zone zone"""
         hub_type = data.get("zone", "normal")
         if hub_type == "normal":
