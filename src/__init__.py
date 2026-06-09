@@ -1,3 +1,4 @@
+from src.colors import Colors
 from src.connection import Connection
 from src.dijkstra import Dijkstra
 from src.drone_map import DroneMap
@@ -9,5 +10,5 @@ from src.visual_simulation import VisualSimulation
 from src.zone_type import ZoneType
 
 
-__all__ = ["Connection", "Dijkstra", "DroneMap", "Drone", "Hub",
+__all__ = ["Colors", "Connection", "Dijkstra", "DroneMap", "Drone", "Hub",
            "ValidateData", "Screen", "VisualSimulation", "ZoneType"]
