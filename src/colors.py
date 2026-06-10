@@ -23,3 +23,4 @@ class Colors(Enum):
     CRIMSON = (220, 20, 60)
     BROWN = (137, 81, 41)
     MAGENTA = (255, 0, 255)
+    PINK = (255, 100, 200)
