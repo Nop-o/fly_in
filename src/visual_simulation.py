@@ -5,6 +5,7 @@ from .screen import Screen
 from .hub import Hub
 from .colors import Colors
 from .drone_map import DroneMap
+from .zone_type import ZoneType
 
 
 class VisualSimulation:
@@ -25,13 +26,13 @@ class VisualSimulation:
         self.max_turn = self._get_max_turn()
         self.drone_map = drone_map
         self.screen = Screen()
-        self._adjust_screen_height()
+        self._adjust_screen_size()
 
         self.hovered_hub: Any = None
         self.hovered_connection: Any = None
         self.mouse_pos: tuple[int, int] = (0, 0)
 
-        all_coordinates = self._get_all_coords()
+        all_coordinates = self._get_all_coordinates()
         self.min_x = min(coordinate[0] for coordinate in all_coordinates)
         self.min_y = min(coordinate[1] for coordinate in all_coordinates)
         self.max_x = max(coordinate[0] for coordinate in all_coordinates)
@@ -44,25 +45,18 @@ class VisualSimulation:
         return max(turn for solution in self.drone_solutions
                    for turn in solution.keys())
 
-    def _adjust_screen_height(self) -> None:
+    def _adjust_screen_size(self) -> None:
         """Resize the pygame window so it fits within the physical display."""
         info = pygame.display.Info()
-        if self.screen.height > info.current_h:
-            new_surface = pygame.display.set_mode(
-                (self.screen.width, info.current_h), pygame.RESIZABLE)
-            self.screen.screen = new_surface
-            self.screen.height = info.current_h
+        new_surface = pygame.display.set_mode((info.current_w, info.current_h),
+                                              pygame.RESIZABLE)
+        self.screen.screen = new_surface
+        self.screen.height = info.current_h
+        self.screen.width = info.current_w
 
-    def _get_all_coords(self) -> list[tuple[int, int]]:
-        return [hub.coordinates for hub in self._all_hubs().values()]
-
-    def _all_hubs(self) -> dict[str, Hub]:
-        hubs = {}
-        if self.drone_map.hub:
-            hubs.update(self.drone_map.hub)
-        hubs[self.drone_map.start_hub.name] = self.drone_map.start_hub
-        hubs[self.drone_map.end_hub.name] = self.drone_map.end_hub
-        return hubs
+    def _get_all_coordinates(self) -> list[tuple[int, int]]:
+        """Get all drones coordinates"""
+        return [hub.coordinates for hub in self.drone_map.hub.values()]
 
     def _to_screen(self, coord: tuple[int, int]) -> tuple[int, int]:
         pad = Screen.PADDING
@@ -118,9 +112,28 @@ class VisualSimulation:
                         result.append(i)
         return result
 
+    def _drones_stopped_on_connection(self, connection: Any,
+                                      turn: int) -> list[int]:
+        """Drones stopped on a connection (restricted hub gap turn)."""
+        result = []
+        for i, solution in enumerate(self.drone_solutions):
+            if turn in solution:
+                continue
+            turns = sorted(solution.keys())
+            prev = [t for t in turns if t < turn]
+            next_ = [t for t in turns if t > turn]
+            if not prev or not next_:
+                continue
+            h0 = solution[prev[-1]][0]
+            h1 = solution[next_[0]][0]
+            if {h0, h1} == {connection.zone_1, connection.zone_2}:
+                result.append(i)
+        return result
+
     def _update_hover(self) -> None:
+        """Update hover information"""
         mouse_x, mouse_y = self.mouse_pos
-        hubs = self._all_hubs()
+        hubs = self.drone_map.hub
 
         self.hovered_hub = None
         for hub in hubs.values():
@@ -142,9 +155,8 @@ class VisualSimulation:
                         return
 
     def _draw_connections(self) -> None:
-        if not self.drone_map.connection:
-            return
-        hubs = self._all_hubs()
+        """Draw connections"""
+        hubs = self.drone_map.hub
 
         for connection in self.drone_map.connection:
             if connection.zone_1 not in hubs or connection.zone_2 not in hubs:
@@ -157,41 +169,56 @@ class VisualSimulation:
             width = 5 if is_hovered else 3
             pygame.draw.line(self.screen.screen, color, p1, p2, width)
 
+            drone_count = len(self._drones_stopped_on_connection(
+                connection, self.current_turn))
+            if drone_count > 0:
+                mid_x = (p1[0] + p2[0]) // 2
+                mid_y = (p1[1] + p2[1]) // 2
+                label = self.screen.font.render(str(drone_count), True,
+                                                Colors.WHITE.value)
+                self.screen.screen.blit(label,
+                                        (mid_x - label.get_width() // 2,
+                                         mid_y - label.get_height() // 2))
+
+    @staticmethod
+    def _get_hub_edge_color(hub: Hub) -> tuple[int, int, int]:
+        if hub.zone == ZoneType.BLOCKED:
+            return Colors.RED.value
+        if hub.zone == ZoneType.NORMAL:
+            return Colors.GREEN.value
+        elif hub.zone == ZoneType.RESTRICTED:
+            return Colors.YELLOW.value
+        return Colors.LIGHT_BLUE.value
+
     def _draw_hubs(self) -> None:
-        """Draw hubs into the simulation"""
-        hubs = self._all_hubs()
+        """
+        Draw hubs into the simulation.
+        Each hub has a central part (this color can be changed in metadata) and
+        an extra ledge which color represent the hub zone type
+        """
+        hubs = self.drone_map.hub
 
         for hub in hubs.values():
             pos = self._to_screen(hub.coordinates)
             is_hovered = (self.hovered_hub is hub)
             radius = Screen.HUB_RADIUS + (6 if is_hovered else 0)
 
-            border_color = (Colors.LIGHT_YELLOW.value if is_hovered
-                            else Colors.WHITE.value)
+            edge_color = VisualSimulation._get_hub_edge_color(hub)
             pygame.draw.circle(self.screen.screen, hub.color.value,
                                pos, radius)
-            pygame.draw.circle(self.screen.screen, border_color,
+            pygame.draw.circle(self.screen.screen, edge_color,
                                pos, radius, 2)
 
-    def _interpolate_drone_pos(
-         self, solution: dict[int, tuple[str, tuple[int, int]]], turn: float
-         ) -> tuple[int, int] | None:
-        turns = sorted(solution.keys())
-        if not turns:
-            return None
-        if turn <= turns[0]:
-            return self._to_screen(solution[turns[0]][1])
-        if turn >= turns[-1]:
-            return self._to_screen(solution[turns[-1]][1])
-        for i in range(len(turns) - 1):
-            t0, t1 = turns[i], turns[i + 1]
-            if t0 <= turn <= t1:
-                alpha = (turn - t0) / (t1 - t0)
-                p0 = self._to_screen(solution[t0][1])
-                p1 = self._to_screen(solution[t1][1])
-                return (int(p0[0] + (p1[0] - p0[0]) * alpha),
-                        int(p0[1] + (p1[1] - p0[1]) * alpha))
-        return None
+            if hub.name == self.drone_map.end_hub.name:
+                if hub.color != Colors.LIGHT_YELLOW:
+                    star = self.screen.font.render("★", True,
+                                                   Colors.LIGHT_YELLOW.value)
+                else:
+                    star = self.screen.font.render("★", True,
+                                                   Colors.LIGHT_YELLOW.value)
+                self.screen.screen.blit(star,
+                                        (pos[0] - star.get_width() // 2,
+                                         pos[1] - star.get_height() // 2))
 
     def _draw_drones(self) -> None:
         """Draw drones into the simulation"""
@@ -212,12 +239,36 @@ class VisualSimulation:
 
             pygame.draw.circle(self.screen.screen, color,
                                pos, Screen.DRONE_RADIUS)
-            pygame.draw.circle(self.screen.screen, Colors.WHITE.value,
-                               pos, Screen.DRONE_RADIUS, 2)
 
-            label = self.screen.font.render(f"D{i}", True, Colors.BLACK.value)
-            self.screen.screen.blit(label, (pos[0] - label.get_width() // 2,
-                                            pos[1] - label.get_height() // 2))
+        for hub in self.drone_map.hub.values():
+            drone_count = len(self._drones_at_hub(hub.name, self.current_turn))
+            if drone_count > 0 and hub != self.drone_map.end_hub:
+                hub_pos = self._to_screen(hub.coordinates)
+                label = self.screen.font.render(str(drone_count), True,
+                                                Colors.WHITE.value)
+                self.screen.screen.blit(label,
+                                        (hub_pos[0] - label.get_width() // 2,
+                                         hub_pos[1] - label.get_height() // 2))
+
+    def _interpolate_drone_pos(
+         self, solution: dict[int, tuple[str, tuple[int, int]]], turn: float
+         ) -> tuple[int, int] | None:
+        turns = sorted(solution.keys())
+        if not turns:
+            return None
+        if turn <= turns[0]:
+            return self._to_screen(solution[turns[0]][1])
+        if turn >= turns[-1]:
+            return self._to_screen(solution[turns[-1]][1])
+        for i in range(len(turns) - 1):
+            t0, t1 = turns[i], turns[i + 1]
+            if t0 <= turn <= t1:
+                alpha = (turn - t0) / (t1 - t0)
+                p0 = self._to_screen(solution[t0][1])
+                p1 = self._to_screen(solution[t1][1])
+                return (int(p0[0] + (p1[0] - p0[0]) * alpha),
+                        int(p0[1] + (p1[1] - p0[1]) * alpha))
+        return None
 
     def _draw_tooltip(self) -> None:
         """Draw info tooltip for hovered hub or connection."""
@@ -283,12 +334,44 @@ class VisualSimulation:
                               font=self.screen.title_font)
 
         self.screen.draw_text(f"Turn: {self.current_turn} / {self.max_turn}",
-                              self.screen.width - 200, 10)
+                              self.screen.width - 150, 10)
 
         self.screen.draw_text(
-            "←/→: step  R: restart  ESC: quit",
+            "←/→: STEP  R: RESTART  F: FULL SCREEN  ESC: QUIT",
             20, self.screen.height - 22, color=Colors.GREY.value
         )
+
+        self._draw_hub_legend()
+
+    def _draw_hub_legend(self) -> None:
+        """Draw hub legend based on their zone type"""
+        legend = [
+            (Colors.GREEN,      "Normal"),
+            (Colors.YELLOW,     "Restricted"),
+            (Colors.LIGHT_BLUE, "Priority"),
+            (Colors.RED,        "Blocked"),
+        ]
+
+        box_w = 140
+        line_h = self.screen.font.get_height()
+        box_h = len(legend) * line_h + 18
+        start_x = self.screen.width - box_w - 10
+        start_y = self.screen.height - box_h - 10
+
+        box_surf = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
+        box_surf.fill((20, 20, 35, 210))
+        pygame.draw.rect(box_surf, (100, 100, 160, 200),
+                         box_surf.get_rect(), 5)
+        self.screen.screen.blit(box_surf, (start_x, start_y))
+
+        for i, (color, label) in enumerate(legend):
+            current_y = start_y + 10 + i * line_h
+            pygame.draw.circle(self.screen.screen, Colors.BLACK.value,
+                               (start_x + 20, current_y + 6), 7)
+            pygame.draw.circle(self.screen.screen, color.value,
+                               (start_x + 20, current_y + 6), 7, 2)
+            self.screen.draw_text(label, start_x + 35, current_y - 2,
+                                  color=Colors.GREY.value)
 
     def _handle_events(self) -> bool:
         """
@@ -296,6 +379,7 @@ class VisualSimulation:
             - ESC: Quit simulation
             - mouse movement
             - r key: reset the simulation
+            - f key: toggle full screen
             - left/right key: move/move back one turn
         """
         for event in pygame.event.get():
@@ -312,6 +396,9 @@ class VisualSimulation:
 
                 if event.key == pygame.K_r:
                     self.current_turn = 0
+
+                if event.key == pygame.K_f:
+                    pygame.display.toggle_fullscreen()
 
                 if event.key == pygame.K_RIGHT:
                     if self.current_turn < self.max_turn:
@@ -333,6 +420,12 @@ class VisualSimulation:
 
         try:
             while self._handle_events():
+
+                screen_width, screen_height = self.screen.screen.get_size()
+                if (screen_width != self.screen.width or
+                   screen_height != self.screen.height):
+                    self.screen.width = screen_width
+                    self.screen.height = screen_height
 
                 self._update_hover()
 
