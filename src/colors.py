@@ -17,7 +17,7 @@ class Colors(Enum):
     WHITE = (255, 255, 255)
     DEFAULT = (180, 180, 200)
     GOLD = (255, 215, 0)
-    MAROON  = (128, 0, 0)
+    MAROON = (128, 0, 0)
     DARKRED = (139, 0, 0)
     VIOLET = (127, 0, 255)
     CRIMSON = (220, 20, 60)
