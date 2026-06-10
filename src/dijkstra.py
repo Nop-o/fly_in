@@ -122,9 +122,8 @@ class Dijkstra:
                     if n["hub"].name == hub.name
                 )
                 if hub.zone == ZoneType.RESTRICTED:
-                    neighbor["connection"].update_current_drone_count(turn - 1)
-                else:
-                    neighbor["connection"].update_current_drone_count(turn)
+                    neighbor["connection"].update_current_drone_count(turn - 2)
+                neighbor["connection"].update_current_drone_count(turn - 1)
 
             last_hub = hub
 
@@ -143,7 +142,10 @@ class Dijkstra:
 
         while not (neighbor["hub"].is_hub_accessible(distance + stop_time)
                    and neighbor["connection"].is_connection_accessible(
-                       distance + stop_time)):
+                    distance + stop_time - 1)
+                   and (neighbor["hub"].zone != ZoneType.RESTRICTED or
+                   neighbor["connection"].is_connection_accessible(
+                    distance + stop_time - 2))):
             if (distance + stop_time) > shortest_distance:
                 return float('inf')
             stop_time += 1
