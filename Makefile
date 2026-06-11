@@ -1,6 +1,6 @@
 PYTHON = python3
 VENV = fly_in_venv
-
+MAP ?= maps/challenger/01_the_impossible_dream.txt
 .SILENT:
 
 help:
@@ -14,7 +14,7 @@ help:
 	@echo "  make help					- Show this help message"
 
 
-install: 
+install:
 	$(PYTHON) -m venv $(VENV)
 	$(VENV)/bin/pip install --upgrade pip
 	$(VENV)/bin/pip install -r requirements.txt
@@ -22,10 +22,10 @@ install:
 	@echo "source $(VENV)/bin/activate"
 
 run:
-	$(VENV)/bin/python -m src.fly_in $(INPUT)
+	$(VENV)/bin/python -m src.fly_in "$(MAP)"
 
 debug:
-	$(VENV)/bin/python -m pdb -m src.fly_in $(INPUT)
+	$(VENV)/bin/python -m pdb -m src.fly_in "$(MAP)"
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +
@@ -33,16 +33,16 @@ clean:
 	find . -type d -name $(VENV) -exec rm -rf {} \;
 
 lint:
-	$(PYTHON) -m flake8 . --exclude=$(VENV)
-	mypy src --warn-unused-ignores \
+	$(VENV)/bin/flake8 . --exclude=$(VENV)
+	$(VENV)/bin/mypy src --warn-unused-ignores \
 	        --warn-return-any \
 	        --ignore-missing-imports \
 	        --disallow-untyped-defs \
 	        --check-untyped-defs
 
 lint-strict:
-	$(PYTHON) -m flake8 . --exclude=$(VENV)
-	mypy	--strict src
+	$(VENV)/bin/flake8 . --exclude=$(VENV)
+	$(VENV)/bin/mypy	--strict src
 
 .PHONY: install run debug clean lint lint-strict help
 
