@@ -1,7 +1,15 @@
 from .parsing import ValidateData
+import sys
 
 
 def main() -> None:
+    if len(sys.argv) == 1:
+        print("Argument error: no arguments provided")
+        return
+    if len(sys.argv) > 2:
+        print("Argument error: too many arguments provided")
+        return
+
     try:
         from pydantic import ValidationError
     except ModuleNotFoundError:
@@ -12,8 +20,7 @@ def main() -> None:
     from .drone_map import DroneMap
 
     try:
-        file_content: ValidateData = ValidateData(
-            "maps/challenger/01_the_impossible_dream.txt")
+        file_content: ValidateData = ValidateData(sys.argv[1])
         parsed_data = file_content.parse_file_content()
 
         drone_map = DroneMap(**parsed_data)
@@ -21,6 +28,7 @@ def main() -> None:
 
     except ValidationError as e:
         print(e.errors()[0]['msg'].replace("Value error, ", ""))
+        return
 
     drone_map.update_all_solution()
     drones_solutions = [drone.solution for drone in drone_map.drones]
@@ -33,6 +41,7 @@ def main() -> None:
     except ModuleNotFoundError:
         print("Import error: pygame is not installed, run the "
               "'make install' command first")
+        return
 
 
 if __name__ == "__main__":
