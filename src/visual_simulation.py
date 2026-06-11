@@ -289,7 +289,7 @@ class VisualSimulation:
         padding = 5
         line_height = self.screen.font.get_height() + 3
         box_width = max(self.screen.font.size(line)[0]
-                    for line in lines) + padding * 2
+                        for line in lines) + padding * 2
         box_height = len(lines) * line_height + padding * 2
 
         mouse_x, mouse_y = self.mouse_pos
@@ -310,7 +310,8 @@ class VisualSimulation:
             color = Colors.LIGHT_YELLOW.value if j == 0 else Colors.GREY.value
             surface = self.screen.font.render(line, True, color)
             self.screen.screen.blit(surface,
-                                    (box_x + padding, by + padding + j * line_height))
+                                    (box_x + padding, by + padding
+                                     + j * line_height))
 
     def _draw_ui(self) -> None:
         """Show simulation information:
