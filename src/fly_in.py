@@ -17,7 +17,6 @@ def main() -> None:
         print("Argument error: too many arguments provided")
         return
 
-
     try:
         file_content: ValidateData = ValidateData(sys.argv[1])
         parsed_data = file_content.parse_file_content()
