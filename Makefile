@@ -33,16 +33,16 @@ clean:
 	find . -type d -name $(VENV) -exec rm -rf {} \;
 
 lint:
-	$(PYTHON) -m flake8 . --exclude=$(VENV)
-	mypy src --warn-unused-ignores \
+	$(VENV)/bin/python -m flake8 src --exclude=$(VENV)
+	$(VENV)/bin/python -m mypy src --warn-unused-ignores \
 	        --warn-return-any \
 	        --ignore-missing-imports \
 	        --disallow-untyped-defs \
 	        --check-untyped-defs
 
 lint-strict:
-	$(PYTHON) -m flake8 . --exclude=$(VENV)
-	mypy	--strict src
+	$(VENV)/bin/python -m flake8 src --exclude=$(VENV)
+	$(VENV)/bin/python -m mypy --strict src
 
 .PHONY: install run debug clean lint lint-strict help
 
