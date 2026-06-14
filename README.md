@@ -5,18 +5,31 @@
 ## Table of Contents
 - [Fly-in](#fly-in)
 	- [Table of Contents](#table-of-contents)
+    - [Description](#description)
+    - [Instructions](#instructions)
+        - [All available commands](#all-available-commands)
+    - [Parsing](#parsing)
+    - [Map components](#map-components)
+        - [Hub](#hub)
+        - [Connection](#connection)
+        - [Zone type](#zone-type)
+        - [Colors](#colors)
+    - [Maps](#maps)
+        - [Easy](#easy)
+        - [Medium](#medium)
+        - [Hard](#hard)
+        - [Challenger](#challenger)
+    - [Resources](#resources)
 
 ## Description
 
-Autonomous drones are the future of transportation. They are already used in many
-industries, such as agriculture, construction, and logistics. They are also used in military
-operations, such as surveillance and reconnaissance.
-Your task is to design a system that efficiently routes a fleet of drones from a central
-base (start) to a target location (end), while navigating this dynamic network under
+The goal of this porject is to design a system that efficiently routes a fleet of drones from a central
+base (start) to a target location (end), while navigating a dynamic network (graph) under
 a set of strict constraints and optimization goals.
-You’ll be given a graph representing the network of zones, and a set of constraints
-that you must respect.
-The graph is represented as a network of connected zones, where connections define possible movement paths between zones.
+
+The graph is represented as a network of connected zones, where connections define possible movement paths between zones.
+
+To find an efficient road for the drones we use the Dijkstra algorithm. Each drone will calculate his shortest path, then he will update each hub/connection capacity per turn. 
 
 ## Instructions
 To compile the project, use the provided `Makefile`:
@@ -34,9 +47,7 @@ To compile the project, use the provided `Makefile`:
 
 
 ## Parsing
-With a given file, I will parse the data and try to recreate a map.
-
-Additionally to the map, a number of drone will be given. The goal will be for each drone to travel from a starting point to an other one, a fast as possible.
+With a given file, we parse the data and try to recreate a map.
 
 ## Map components
 A drone map has:
@@ -48,7 +59,7 @@ A drone map has:
 
 ### Hub
 
-Each map has a starting hub and an end hub.
+Each map has a starting hub, an end hub and an number N of hubs.
 
 A hub has:
 - a name
@@ -78,11 +89,10 @@ There are 4 possible types and each takes a specific number of turn to acces:
 
 #### Colors
 All hubs have a color.
-For this simulation I used RGB colors (Red Green Blue).
+For this simulation we use RGB colors (Red Green Blue).
 Rgb colors are a set of 3 value between 0 and 255.
-For exemple, i reproduced the gold color whith (255, 215, 0).
+For exemple, we reproduce the gold color whith (255, 215, 0).
 
-### 
 
 ## Maps
 With the subject, additional maps where given.
