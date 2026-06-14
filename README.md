@@ -8,6 +8,9 @@
     - [Description](#description)
     - [Instructions](#instructions)
         - [All available commands](#all-available-commands)
+        - [Running a specific map](#running-a-specific-map)
+    - [Algorithm](#algorithm)
+    - [Visual Representation](#visual-representation)
     - [Parsing](#parsing)
     - [Map components](#map-components)
         - [Hub](#hub)
@@ -19,22 +22,34 @@
         - [Medium](#medium)
         - [Hard](#hard)
         - [Challenger](#challenger)
+    - [Initial project structure](#initial-project-structure)
     - [Resources](#resources)
+
+---
 
 ## Description
 
-The goal of this porject is to design a system that efficiently routes a fleet of drones from a central
+The goal of this project is to design a system that efficiently routes a fleet of drones from a central
 base (start) to a target location (end), while navigating a dynamic network (graph) under
 a set of strict constraints and optimization goals.
 
-The graph is represented as a network of connected zones, where connections define possible movement paths between zones.
+The graph is represented as a network of connected zones, where connections define possible movement paths between zones. Each zone has a type that affects how drones can move through it, and each hub and connection has a maximum drone capacity that must be respected at all times.
 
-To find an efficient road for the drones we use the Dijkstra algorithm. Each drone will calculate his shortest path, then he will update each hub/connection capacity per turn. 
+Once all paths are computed, a pygame-based visual simulation lets you step through the solution turn by turn and inspect the state of the map interactively.
+
+---
 
 ## Instructions
-To compile the project, use the provided `Makefile`:
+
+To get started, use the provided `Makefile`:
+
+```bash
+make install   # create virtual environment and install dependencies
+make run       # run with the default map
+```
 
 ### All available commands
+
 | Command | Description |
 | :--- | :--- |
 | `make install` | Create virtual environment and install dependencies |
@@ -43,67 +58,126 @@ To compile the project, use the provided `Makefile`:
 | `make lint` | Run flake8 and mypy with standard checks |
 | `make lint-strict` | Run flake8 and mypy with strict mode |
 | `make debug` | Run the main script in debug mode (pdb) |
-| `make help` | Show an help message |
+| `make help` | Show a help message |
 
+### Running a specific map
+
+You can pass a custom map path at runtime:
+
+```bash
+make run MAP=maps/easy/01_linear_path.txt
+```
+
+The default map is `maps/challenger/01_the_impossible_dream.txt`.
+
+---
+
+## Algorithm
+
+Drone routing is solved using a modified **Dijkstra algorithm**. Each drone computes its shortest path independently, then updates the capacity of every hub and connection it passes through, turn by turn. Subsequent drones must account for those reservations when planning their own route.
+
+Key implementation choices:
+
+- **Weight per hub**: each hub has a cost based on its zone type (1 turn for NORMAL/PRIORITY, 2 for RESTRICTED, infinity for BLOCKED).
+- **Capacity checking**: before moving to a hub or through a connection, the algorithm verifies that the target is not at capacity at the arrival turn.
+- **Wait time (`stop_time`)**: if a hub or connection is full at the planned arrival turn, the drone waits at its current position until it becomes accessible. This extra cost is added to the path distance.
+- **Tie-breaking**: when two paths have the same cost, the one passing through more PRIORITY hubs is preferred (tracked via a priority counter).
+- **RESTRICTED hubs**: take 2 turns to enter — the drone occupies the connecting connection for 1 turn, then the hub for 1 turn. Both turns are reserved in the capacity tracking.
+- **Capacity updates**: after a path is finalized, `_update_hub_connection_capacity` marks every hub and connection the drone visits, so later drones see an accurate picture of what is available.
+
+---
+
+## Visual Representation
+
+After all paths are computed, a pygame window opens and lets you explore the solution interactively.
+
+### Controls
+
+| Key | Action |
+| :--- | :--- |
+| `←` / `→` | Step back / forward one turn |
+| `R` | Restart from turn 0 |
+| `F` | Toggle fullscreen |
+| `ESC` | Quit |
+
+### Features
+
+- **Hubs** are drawn as circles. The fill color is configurable per hub; the border color reflects the zone type (see legend in the bottom-right corner).
+- **Connections** are drawn as lines between hubs. Hovering a connection highlights it and shows a tooltip with its capacity and current drone count.
+- **Drones** are drawn as colored circles on top of hubs or connections. Each drone has a unique color from a fixed palette.
+- **Drone count**: the number of drones currently at a hub is displayed at the center of that hub. During a RESTRICTED connection stop, the count is displayed at the midpoint of the connection.
+- **Exit hub**: marked with a ★ so it is immediately identifiable.
+- **Tooltips**: hovering a hub or connection shows its name, coordinates, max capacity, and current drone count.
+- **Legend**: a small box in the bottom-right corner shows the border color for each zone type.
+- **Resizable window**: the map rescales automatically when the window is resized.
+
+---
 
 ## Parsing
-With a given file, we parse the data and try to recreate a map.
+
+Given a map file, the parser reads and validates the data using Pydantic models, then constructs a `DroneMap` object containing all hubs, connections, and drone configuration. Invalid files are rejected with a descriptive error message.
+
+---
 
 ## Map components
-A drone map has:
-- a number of drone
-- starting hub
-- ending hub
-- hubs
-- connections
+
+A drone map contains:
+- a number of drones
+- a starting hub
+- an ending hub
+- intermediate hubs
+- connections between hubs
 
 ### Hub
 
-Each map has a starting hub, an end hub and an number N of hubs.
-
-A hub has:
-- a name
-- coordinates
-- zone type*
-- a color*
-- a max drone capacity
-- a list of neighbors: connected hubs + the connection
-- a turn capacity: a dynamic list of the number of drone being on the hub at a given turn 
+Each hub has:
+- a **name**
+- **coordinates** `(x, y)`
+- a **zone type** (see below)
+- a **color** (optional, defaults to zone type color)
+- a **max drone capacity**
+- a list of **neighbors**: connected hubs and the connection linking them
+- a **turn capacity**: tracks how many drones are on the hub at each turn
 
 ### Connection
-Hubs are linked with connections.
-A connection has:
-- hub_1_name
-- hub_2_name
-- a max drone capacity
-- a turn capacity: a dynamic list of the number of drone being on the connection at a given turn 
 
-#### Zone type
+Hubs are linked by connections. Each connection has:
+- `zone_1` and `zone_2`: the names of the two hubs it links
+- a **max drone capacity**
+- a **turn capacity**: tracks how many drones are on the connection at each turn
 
-All hubs have a specific zone type.
-There are 4 possible types and each takes a specific number of turn to acces:
-- NORMAL: 1 turn
-- PRIORITY: 1 turn, if possible, you should go to this hub instead of any other one
-- BLOCKED: No access, it's a dead end
-- RESTRICTED: 2 turns
+### Zone type
 
-#### Colors
-All hubs have a color.
-For this simulation we use RGB colors (Red Green Blue).
-Rgb colors are a set of 3 value between 0 and 255.
-For exemple, we reproduce the gold color whith (255, 215, 0).
+| Zone | Travel cost | Notes |
+| :--- | :--- | :--- |
+| `NORMAL` | 1 turn | Standard hub |
+| `PRIORITY` | 1 turn | Preferred over NORMAL when paths are equal |
+| `BLOCKED` | ∞ | Impassable |
+| `RESTRICTED` | 2 turns | Drone stops on the connection for 1 turn, then on the hub for 1 turn |
 
+### Colors
+
+Hubs have an RGB color `(R, G, B)` where each component is between 0 and 255. If no color is specified, the zone type determines the default:
+
+| Zone | Default color |
+| :--- | :--- |
+| NORMAL | Green |
+| PRIORITY | Light blue |
+| RESTRICTED | Yellow |
+| BLOCKED | Red |
+
+---
 
 ## Maps
-With the subject, additional maps where given.
-To try them out, go to the fly_in.py file and add one of the map path as an argument to this function : `file_content: ValidateData = ValidateData(<map_path>)`
+
+A default map path can be overridden with `make run MAP=<path>`. Available maps:
 
 ### Easy
 - `maps/easy/01_linear_path.txt`
 - `maps/easy/02_simple_fork.txt`
 - `maps/easy/03_basic_capacity.txt`
-### Medium
 
+### Medium
 - `maps/medium/01_dead_end_trap.txt`
 - `maps/medium/02_circular_loop.txt`
 - `maps/medium/03_priority_puzzle.txt`
@@ -116,7 +190,23 @@ To try them out, go to the fly_in.py file and add one of the map path as an argu
 ### Challenger
 - `maps/challenger/01_the_impossible_dream.txt`
 
+---
+
+## Initial project structure
+
+![Project structure](image.png)
+
+---
 
 ## Resources
-[codecademy: Dijkstra algorithm](https://www.codecademy.com/article/dijkstras-shortest-path-algorithm)  
-[Excalidraw: Visual representation](https://excalidraw.com/)
+
+[Codecademy — Dijkstra's Shortest Path Algorithm](https://www.codecademy.com/article/dijkstras-shortest-path-algorithm)  
+[Excalidraw — Visual diagramming tool used for planning](https://excalidraw.com/)  
+[Pydantic documentation](https://docs.pydantic.dev/)  
+[pygame documentation](https://www.pygame.org/docs/)  
+
+### AI usage
+
+Claude (Anthropic) was used throughout this project for:
+- **Code review**: spotting unused variables, dead code, and inconsistent type annotations.
+- **README**: writing and structuring this document based on project content.
