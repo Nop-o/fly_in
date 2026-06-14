@@ -105,7 +105,7 @@ class VisualSimulation:
             turns = sorted(solution.keys())
             for j in range(len(turns) - 1):
                 t0, t1 = turns[j], turns[j + 1]
-                if t0 <= turn < t1:
+                if t0 < turn < t1:
                     h0 = solution[t0][0]
                     h1 = solution[t1][0]
                     if ({h0, h1} == {connection.zone_1, connection.zone_2}):
@@ -156,17 +156,6 @@ class VisualSimulation:
             width = 5 if is_hovered else 3
             pygame.draw.line(self.screen.screen, color, zone_1_coordinates,
                              zone_2_coordinates, width)
-
-            drone_count = len(self._drones_on_connection(
-                connection, self.current_turn))
-            if drone_count > 0:
-                middle_x = (zone_1_coordinates[0] + zone_2_coordinates[0]) // 2
-                middle_y = (zone_1_coordinates[1] + zone_2_coordinates[1]) // 2
-                label = self.screen.font.render(str(drone_count), True,
-                                                Colors.BLACK.value)
-                self.screen.screen.blit(label,
-                                        (middle_x - label.get_width() // 2,
-                                         middle_y - label.get_height() // 2))
 
     @staticmethod
     def _get_hub_edge_color(hub: Hub) -> tuple[int, int, int]:
@@ -239,6 +228,20 @@ class VisualSimulation:
                                         (hub_pos[0] - label.get_width() // 2,
                                          hub_pos[1] - label.get_height() // 2))
 
+        for connection in self.drone_map.connection:
+            drone_count = len(self._drones_on_connection(connection,
+                                                         self.current_turn))
+            if drone_count > 0:
+                hubs = self.drone_map.hub
+                p1 = self._to_screen(hubs[connection.zone_1].coordinates)
+                p2 = self._to_screen(hubs[connection.zone_2].coordinates)
+                mid = ((p1[0] + p2[0]) // 2, (p1[1] + p2[1]) // 2)
+                label = self.screen.font.render(str(drone_count), True,
+                                                Colors.WHITE.value)
+                self.screen.screen.blit(label,
+                                        (mid[0] - label.get_width() // 2,
+                                         mid[1] - label.get_height() // 2))
+
     def _interpolate_drone_pos(
          self, solution: dict[int, tuple[str, tuple[int, int]]], turn: float
          ) -> tuple[int, int] | None:
@@ -289,7 +292,7 @@ class VisualSimulation:
         padding = 5
         line_height = self.screen.font.get_height() + 3
         box_width = max(self.screen.font.size(line)[0]
-                    for line in lines) + padding * 2
+                        for line in lines) + padding * 2
         box_height = len(lines) * line_height + padding * 2
 
         mouse_x, mouse_y = self.mouse_pos
@@ -310,7 +313,8 @@ class VisualSimulation:
             color = Colors.LIGHT_YELLOW.value if j == 0 else Colors.GREY.value
             surface = self.screen.font.render(line, True, color)
             self.screen.screen.blit(surface,
-                                    (box_x + padding, by + padding + j * line_height))
+                                    (box_x + padding, by + padding
+                                     + j * line_height))
 
     def _draw_ui(self) -> None:
         """Show simulation information:
