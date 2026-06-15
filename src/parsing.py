@@ -46,28 +46,28 @@ class ValidateData:
                 line, comment = line.split("#", 1)
             if ":" not in line:
                 raise ValueError(
-                    "Wrong file input: missing ':' " f"separator (line {i})"
+                    "Wrong file input: missing ':' " f"separator (line {i + 1})"
                 )
 
             key, value = line.split(":", 1)
 
             if not key:
                 raise ValueError(
-                    "Wrong file input: no key given " f"(line {i})"
+                    "Wrong file input: no key given " f"(line {i + 1})"
                 )
             if not value.strip() and value != "0":
                 raise ValueError(
-                    "Wrong file input: no value given " f"(line {i})"
+                    "Wrong file input: no value given " f"(line {i + 1})"
                 )
 
             if key not in possible_key:
                 if key in ["nb_drones", "start_hub", "end_hub"]:
                     raise ValueError(
-                        f"Wrong file input: {key} already used " f"(line {i})"
+                        f"Wrong file input: {key} already used " f"(line {i + 1})"
                     )
                 raise ValueError(
                     f"Wrong file input: {key} is not a value "
-                    f"key (line {i})"
+                    f"key (line {i + 1})"
                 )
 
             if key in ["nb_drones", "start_hub", "end_hub"]:
@@ -75,7 +75,7 @@ class ValidateData:
                 if key == "nb_drones" and not is_first:
                     raise ValueError(
                         "Wrong file input: the number of drone is not the "
-                        f"first input (line {i})"
+                        f"first input (line {i + 1})"
                     )
             is_first = False
 
@@ -116,14 +116,14 @@ class ValidateData:
         if "-" not in value:
             raise ValueError(
                 "Wrong file input: missing a dashe for a connection "
-                f"format (line {line})"
+                f"format (line {line + 1})"
             )
 
         split_data = value.strip().split("-")
         if len(split_data) != 2:
             raise ValueError(
                 "Wrong file input: two many dashes in a connection "
-                f"(line {line})"
+                f"(line {line + 1})"
             )
 
         zone1, zone2 = split_data[0], split_data[1]
@@ -132,7 +132,7 @@ class ValidateData:
             if len(split_metadata) != 2:
                 raise ValueError(
                     "Wrong file input: too many arguments for a connection "
-                    f"(line {line})"
+                    f"(line {line + 1})"
                 )
             zone2, metadata = split_metadata[0], split_metadata[1]
             connection.update(ValidateData._verify_metadata("connection",
@@ -143,12 +143,12 @@ class ValidateData:
         if zone1 not in zone_name or zone2 not in zone_name:
             raise ValueError(
                 "Wrong file input: a hub needs to exist before connecting it "
-                f"(line {line})"
+                f"(line {line + 1})"
             )
         if zone1 == zone2:
             raise ValueError(
                 "Wrong file input: a hub can't be connected to himself "
-                f"(line {line})"
+                f"(line {line + 1})"
             )
         return connection
 
@@ -168,13 +168,13 @@ class ValidateData:
 
         if " " not in value:
             raise ValueError(
-                f"Wrong file input: not enough data given (line {line})"
+                f"Wrong file input: not enough data given (line {line + 1})"
             )
 
         data = value.strip().split(" ", 3)
         if len(data) < 3 or not data[0] or data[1] == "" or data[2] == "":
             raise ValueError(
-                f"Wrong file input: not enough data given (line {line})"
+                f"Wrong file input: not enough data given (line {line + 1})"
             )
 
         hub["name"] = data[0]
@@ -183,24 +183,22 @@ class ValidateData:
             metadata = data[3]
             hub.update(ValidateData._verify_metadata(key, metadata, line))
 
-        if key in ["start_hub", "end_hub"] and "max_drones" not in metadata:
+        if key in ["start_hub", "end_hub"]:
             hub["max_drones"] = drone_count
-        else:
-            hub["max_drones"] = hub.get("max_drones", '1')
 
         if "-" in data[0]:
             raise ValueError(
-                f"Wrong file input: name can't have dashes (line {line})"
+                f"Wrong file input: name can't have dashes (line {line + 1})"
             )
         if hub["name"] in zone_name:
             raise ValueError(
                 "Wrong file input: can't have duplicate zone name"
-                f"(line {line})"
+                f"(line {line + 1})"
             )
         if hub["coordinates"] in coordinates:
             raise ValueError(
                 "Wrong file input: can't have duplicate coordinates"
-                f"(line {line})"
+                f"(line {line + 1})"
             )
         zone_name.add(hub["name"])
         coordinates.add(hub["coordinates"])
@@ -220,32 +218,32 @@ class ValidateData:
         ]
         if not metadatas.startswith("[") or not metadatas.endswith("]"):
             raise ValueError(
-                f"Wrong file input: wrong metadata format (line {line})"
+                f"Wrong file input: wrong metadata format (line {line + 1})"
             )
 
         list_metadata = metadatas[1:-1].split(" ")
         for metadata in list_metadata:
             if not metadata or "=" not in metadata:
                 raise ValueError(
-                    f"Wrong file input: wrong metadata format (line {line})"
+                    f"Wrong file input: wrong metadata format (line {line + 1})"
                 )
 
             m_key, m_value = metadata.split("=")
             if m_key not in possible_key:
                 raise ValueError(
                     f"Wrong file input: {key} metadata key is not valid "
-                    f"(line {line})"
+                    f"(line {line + 1})"
                 )
             if (m_key == "max_link_capacity" and key != "connection") or (
                 m_key != "max_link_capacity" and key == "connection"
             ):
                 raise ValueError(
                     f"Wrong file input: a {key} doesn't have access to {m_key}"
-                    f" metadata (line {line})"
+                    f" metadata (line {line + 1})"
                 )
             if not m_value:
                 raise ValueError(
-                    f"Wrong file input: empty metadata value (line {line})"
+                    f"Wrong file input: empty metadata value (line {line + 1})"
                 )
 
             parsed_metadata[m_key] = m_value
