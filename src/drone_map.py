@@ -3,6 +3,7 @@ from .drone import Drone
 from .hub import Hub
 from .connection import Connection
 from .zone_type import ZoneType
+import pygame
 
 
 class DroneMap(BaseModel):
@@ -71,21 +72,21 @@ def main() -> None:
                 name="start",
                 coordinates=(4, 3),
                 zone=ZoneType.NORMAL,
-                color="green",
+                color=pygame.Color("green"),
                 max_drones=50,
             ),
             end_hub=Hub(
                 name="goal",
                 coordinates=(4, 2),
                 zone=ZoneType.NORMAL,
-                color="green",
+                color=pygame.Color("green"),
                 max_drones=50,
             ),
             hub={"hub1": Hub(
                 name="hub1",
                 coordinates=(4, 1),
                 zone=ZoneType.NORMAL,
-                color="green",
+                color=pygame.Color("green"),
                 max_drones=50,
             )},
             connection=[

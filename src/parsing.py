@@ -46,7 +46,7 @@ class ValidateData:
                 line, comment = line.split("#", 1)
             if ":" not in line:
                 raise ValueError(
-                    "Wrong file input: missing ':' " f"separator (line {i + 1})"
+                    f"Wrong file input: missing ':' separator (line {i + 1})"
                 )
 
             key, value = line.split(":", 1)
@@ -63,7 +63,7 @@ class ValidateData:
             if key not in possible_key:
                 if key in ["nb_drones", "start_hub", "end_hub"]:
                     raise ValueError(
-                        f"Wrong file input: {key} already used " f"(line {i + 1})"
+                        f"Wrong file input: {key} already used (line {i + 1})"
                     )
                 raise ValueError(
                     f"Wrong file input: {key} is not a value "
@@ -225,7 +225,8 @@ class ValidateData:
         for metadata in list_metadata:
             if not metadata or "=" not in metadata:
                 raise ValueError(
-                    f"Wrong file input: wrong metadata format (line {line + 1})"
+                    "Wrong file input: wrong metadata format "
+                    f"(line {line + 1})"
                 )
 
             m_key, m_value = metadata.split("=")

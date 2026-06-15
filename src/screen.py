@@ -29,7 +29,7 @@ class Screen:
         self.screen.fill(pygame.Color("black"))
 
     def draw_text(self, text: str, x: int, y: int,
-                  color: tuple[int, int, int] = pygame.Color("gray44"),
+                  color: pygame.Color = pygame.Color("gray44"),
                   font: Any = None) -> None:
         """Draw text into the simulation"""
         if font is None:

@@ -1,5 +1,6 @@
 import pygame
-from pydantic import BaseModel, Field, ValidationError, model_validator, ConfigDict
+from pydantic import (BaseModel, Field, ValidationError,
+                      model_validator, ConfigDict)
 from typing import Any, Annotated
 from .zone_type import ZoneType
 
