@@ -16,6 +16,7 @@ class DroneMap(BaseModel):
 
     @model_validator(mode='after')
     def _add_start_end_hub_to_hub(self) -> "DroneMap":
+        """"Add start/end hubs to DroneMap.hub"""
         self.hub[self.start_hub.name] = self.start_hub
         self.hub[self.end_hub.name] = self.end_hub
         return self
@@ -42,19 +43,6 @@ class DroneMap(BaseModel):
                     "hub": self.hub[road.zone_1], "connection": road})
         return self
 
-    @model_validator(mode='after')
-    def _verify_entry_exit_max_drones(self) -> "DroneMap":
-        """Verify if entry/exit can support all the drones at once"""
-        if self.nb_drones > self.start_hub.max_drones:
-            raise ValueError("Hub error: start hub can't support "
-                             f"{self.nb_drones} drones (only "
-                             f"{self.start_hub.max_drones})")
-        if self.nb_drones > self.end_hub.max_drones:
-            raise ValueError("Hub error: end hub can't support "
-                             f"{self.nb_drones} drones (only "
-                             f"{self.end_hub.max_drones})")
-        return self
-
     def create_drones(self) -> None:
         """Call the drone factory to create the drones"""
         self.drones = Drone.drone_factory(self.nb_drones)
@@ -75,7 +63,6 @@ DroneMap.model_rebuild()
 
 
 def main() -> None:
-    from .colors import Colors
 
     try:
         drone_map = DroneMap(
@@ -84,21 +71,21 @@ def main() -> None:
                 name="start",
                 coordinates=(4, 3),
                 zone=ZoneType.NORMAL,
-                color=Colors.GREEN,
+                color="green",
                 max_drones=50,
             ),
             end_hub=Hub(
                 name="goal",
                 coordinates=(4, 2),
                 zone=ZoneType.NORMAL,
-                color=Colors.GREEN,
+                color="green",
                 max_drones=50,
             ),
             hub={"hub1": Hub(
                 name="hub1",
                 coordinates=(4, 1),
                 zone=ZoneType.NORMAL,
-                color=Colors.GREEN,
+                color="green",
                 max_drones=50,
             )},
             connection=[

@@ -24,6 +24,10 @@ class Drone(BaseModel):
         algorithm = Dijkstra(start_hub, end_hub, hubs)
         self.solution = algorithm.find_solution_and_update_hub_capacity()
 
+        if not self.solution:
+            raise ValueError("Solution error: no path found between start "
+                             "and end hub")
+
     def print_current_position_and_id(self, turn: int) -> None:
         """Print the turn output of the drone (current position with ID)"""
         if not self.solution:

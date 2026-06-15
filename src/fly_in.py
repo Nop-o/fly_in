@@ -26,18 +26,20 @@ def main() -> None:
         drone_map = DroneMap(**parsed_data)
         drone_map.create_drones()
 
-    except ValidationError as e:
-        print(e.errors()[0]['msg'].replace("Value error, ", ""))
-        return
+        drone_map.update_all_solution()
+        drones_solutions = [drone.solution for drone in drone_map.drones]
 
-    drone_map.update_all_solution()
-    drones_solutions = [drone.solution for drone in drone_map.drones]
-
-    try:
         from .visual_simulation import VisualSimulation
 
         simulation = VisualSimulation(drones_solutions, drone_map)
         simulation.run()
+
+    except ValidationError as e:
+        print(e.errors()[0]['msg'].replace("Value error, ", ""))
+        return
+    except ValueError as e:
+        print(e)
+        return
     except ModuleNotFoundError:
         print("Import error: pygame is not installed, run the "
               "'make install' command first")

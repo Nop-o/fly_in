@@ -18,15 +18,25 @@ class Dijkstra:
         If two paths take the same time, take the one with the
         highest priority.
         """
-        solution: dict[str, Any] = self._find_solution()
-        self._get_solution_path(solution)
+        if (self.start.zone is ZoneType.BLOCKED or
+           self.exit.zone is ZoneType.BLOCKED):
+            return {}
 
+        solution: dict[str, Any] = self._find_solution()
+        if not solution:
+            return {}
+
+        self._get_solution_path(solution)
         self._update_hub_connection_capacity()
 
         return self.solution_path
 
     def _get_solution_path(
             self, end_solution: dict[str, Any]) -> None:
+        """
+        Return a dict with the current turn as a key and the position
+        of the drone
+        """
         current: dict[str, Any] = end_solution
 
         while current is not None:
@@ -48,10 +58,8 @@ class Dijkstra:
         Dijkstra algorithm:
             - on a graph, each points have a weight (init to inf)
             - the weight is the time cost the reach that point from start
-            - if a new faster way of getting to a point is discovered,
-              update the point weight
-            - returns a dict with the current turn as a key and the position
-              of the drone
+            - if a new faster way or with more priority of getting to a
+              point is discovered, update the point weight and path
         """
         solution: dict[str, dict[str, Any]] = {
             hub_name: {
@@ -59,7 +67,7 @@ class Dijkstra:
                 "position": None,
                 "hub_name": None,
                 "previous": None,
-                "priority": None,
+                "priority": 0,
                 "stop_time": 0,
              } for hub_name in self.hubs.keys()
             }
@@ -104,6 +112,9 @@ class Dijkstra:
 
                     heapq.heappush(queue, (new_distance, new_priority,
                                            tie_breaker, neighbor["hub"]))
+
+        if solution[self.exit.name]["previous"] is None:
+            return {}
 
         return solution[self.exit.name]
 
