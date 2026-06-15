@@ -3,7 +3,6 @@ import math
 from typing import Any
 from .screen import Screen
 from .hub import Hub
-from .colors import Colors
 from .drone_map import DroneMap
 from .zone_type import ZoneType
 
@@ -39,6 +38,7 @@ class VisualSimulation:
         self.max_y = max(coordinate[1] for coordinate in all_coordinates)
 
     def _get_max_turn(self) -> int:
+        """Get the highest turn reached between any drone"""
         if not self.drone_solutions:
             return 0
 
@@ -59,6 +59,7 @@ class VisualSimulation:
         return [hub.coordinates for hub in self.drone_map.hub.values()]
 
     def _to_screen(self, coord: tuple[int, int]) -> tuple[int, int]:
+        """Print"""
         pad = 80
 
         dx = self.max_x - self.min_x or 1
@@ -94,7 +95,10 @@ class VisualSimulation:
         """Return list of drone indices present at hub_name at given turn."""
         result = []
         for i, solution in enumerate(self.drone_solutions):
-            if turn in solution and solution[turn][0] == hub_name:
+            if (turn not in solution and
+               hub_name == self.drone_map.end_hub.name):
+                result.append(i)
+            elif turn in solution and solution[turn][0] == hub_name:
                 result.append(i)
         return result
 
@@ -150,23 +154,23 @@ class VisualSimulation:
 
             is_hovered = (self.hovered_connection is connection)
             if is_hovered:
-                color = Colors.ORANGE.value
+                color = pygame.Color("orange")
             else:
-                color = Colors.PURPLE.value
+                color = pygame.Color("purple")
             width = 5 if is_hovered else 3
             pygame.draw.line(self.screen.screen, color, zone_1_coordinates,
                              zone_2_coordinates, width)
 
     @staticmethod
-    def _get_hub_edge_color(hub: Hub) -> tuple[int, int, int]:
+    def _get_hub_edge_color(hub: Hub) -> pygame.Color:
         """Get the hub edge color base on it's zone type"""
         if hub.zone == ZoneType.BLOCKED:
-            return Colors.RED.value
+            return pygame.Color("red")
         if hub.zone == ZoneType.NORMAL:
-            return Colors.GREEN.value
+            return pygame.Color("green")
         elif hub.zone == ZoneType.RESTRICTED:
-            return Colors.YELLOW.value
-        return Colors.LIGHT_BLUE.value
+            return pygame.Color("yellow")
+        return pygame.Color("aqua")
 
     def _draw_hubs(self) -> None:
         """
@@ -178,22 +182,22 @@ class VisualSimulation:
 
         for hub in hubs.values():
             pos = self._to_screen(hub.coordinates)
-            is_hovered = (self.hovered_hub is hub)
-            radius = 22 + (6 if is_hovered else 0)
+            is_hovered = self.hovered_hub is hub
+            radius = 30 if is_hovered else 25
 
             edge_color = VisualSimulation._get_hub_edge_color(hub)
-            pygame.draw.circle(self.screen.screen, hub.color.value,
+            pygame.draw.circle(self.screen.screen, hub.color,
                                pos, radius)
             pygame.draw.circle(self.screen.screen, edge_color,
                                pos, radius, 2)
 
             if hub.name == self.drone_map.end_hub.name:
-                if hub.color != Colors.LIGHT_YELLOW:
+                if hub.color != pygame.Color("yellow"):
                     star = self.screen.font.render("★", True,
-                                                   Colors.LIGHT_YELLOW.value)
+                                                   pygame.Color("yellow"))
                 else:
                     star = self.screen.font.render("★", True,
-                                                   Colors.LIGHT_YELLOW.value)
+                                                   pygame.Color("white"))
                 self.screen.screen.blit(star,
                                         (pos[0] - star.get_width() // 2,
                                          pos[1] - star.get_height() // 2))
@@ -208,7 +212,7 @@ class VisualSimulation:
 
             glow = pygame.Surface((Screen.DRONE_RADIUS * 6,
                                    Screen.DRONE_RADIUS * 6), pygame.SRCALPHA)
-            pygame.draw.circle(glow, (*color, 60),
+            pygame.draw.circle(glow, (*color[:3], 60),
                                (Screen.DRONE_RADIUS * 3,
                                 Screen.DRONE_RADIUS * 3),
                                Screen.DRONE_RADIUS * 3)
@@ -220,10 +224,10 @@ class VisualSimulation:
 
         for hub in self.drone_map.hub.values():
             drone_count = len(self._drones_at_hub(hub.name, self.current_turn))
-            if drone_count > 0 and hub != self.drone_map.end_hub:
+            if drone_count > 0:
                 hub_pos = self._to_screen(hub.coordinates)
                 label = self.screen.font.render(str(drone_count), True,
-                                                Colors.WHITE.value)
+                                                pygame.Color("black"))
                 self.screen.screen.blit(label,
                                         (hub_pos[0] - label.get_width() // 2,
                                          hub_pos[1] - label.get_height() // 2))
@@ -237,7 +241,7 @@ class VisualSimulation:
                 p2 = self._to_screen(hubs[connection.zone_2].coordinates)
                 mid = ((p1[0] + p2[0]) // 2, (p1[1] + p2[1]) // 2)
                 label = self.screen.font.render(str(drone_count), True,
-                                                Colors.WHITE.value)
+                                                pygame.Color("black"))
                 self.screen.screen.blit(label,
                                         (mid[0] - label.get_width() // 2,
                                          mid[1] - label.get_height() // 2))
@@ -248,12 +252,15 @@ class VisualSimulation:
         turns = sorted(solution.keys())
         if not turns:
             return None
+
         if turn <= turns[0]:
             return self._to_screen(solution[turns[0]][1])
         if turn >= turns[-1]:
             return self._to_screen(solution[turns[-1]][1])
+
         for i in range(len(turns) - 1):
             t0, t1 = turns[i], turns[i + 1]
+
             if t0 <= turn <= t1:
                 alpha = (turn - t0) / (t1 - t0)
                 p0 = self._to_screen(solution[t0][1])
@@ -310,7 +317,7 @@ class VisualSimulation:
         self.screen.screen.blit(box_surface, (box_x, by))
 
         for j, line in enumerate(lines):
-            color = Colors.LIGHT_YELLOW.value if j == 0 else Colors.GREY.value
+            color = pygame.Color("yellow") if j == 0 else pygame.Color("grey")
             surface = self.screen.font.render(line, True, color)
             self.screen.screen.blit(surface,
                                     (box_x + padding, by + padding
@@ -323,7 +330,7 @@ class VisualSimulation:
             - possible keyboard command
         """
         self.screen.draw_text("FLY-IN VISUALIZER", 20, 10,
-                              color=Colors.LIGHT_GREY.value,
+                              color=pygame.Color("grey"),
                               font=self.screen.title_font)
 
         self.screen.draw_text(f"Turn: {self.current_turn} / {self.max_turn}",
@@ -331,7 +338,7 @@ class VisualSimulation:
 
         self.screen.draw_text(
             "←/→: STEP  R: RESTART  F: FULL SCREEN  ESC: QUIT",
-            20, self.screen.height - 22, color=Colors.GREY.value
+            20, self.screen.height - 22, color=pygame.Color("grey")
         )
 
         self._draw_hub_legend()
@@ -339,10 +346,10 @@ class VisualSimulation:
     def _draw_hub_legend(self) -> None:
         """Draw hub legend based on their zone type"""
         legend = [
-            (Colors.GREEN,      "Normal"),
-            (Colors.YELLOW,     "Restricted"),
-            (Colors.LIGHT_BLUE, "Priority"),
-            (Colors.RED,        "Blocked"),
+            (pygame.Color("green"),  "Normal"),
+            (pygame.Color("yellow"), "Restricted"),
+            (pygame.Color("aqua"),   "Priority"),
+            (pygame.Color("red"),    "Blocked"),
         ]
 
         box_width = 140
@@ -359,12 +366,12 @@ class VisualSimulation:
 
         for i, (color, label) in enumerate(legend, 0):
             current_y = start_y + 10 + i * line_height
-            pygame.draw.circle(self.screen.screen, Colors.BLACK.value,
+            pygame.draw.circle(self.screen.screen, pygame.Color("black"),
                                (start_x + 20, current_y + 6), 7)
-            pygame.draw.circle(self.screen.screen, color.value,
+            pygame.draw.circle(self.screen.screen, color,
                                (start_x + 20, current_y + 6), 7, 2)
             self.screen.draw_text(label, start_x + 35, current_y - 2,
-                                  color=Colors.GREY.value)
+                                  pygame.Color("grey"))
 
     def _handle_events(self) -> bool:
         """

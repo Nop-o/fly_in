@@ -1,15 +1,14 @@
 import pygame
 from typing import Any
-from .colors import Colors
 
 
 class Screen:
     PATH_COLORS = [
-        Colors.YELLOW.value,
-        Colors.LIGHT_BLUE.value,
-        Colors.PINK.value,
-        Colors.GREEN.value,
-        Colors.ORANGE.value,
+        pygame.Color("yellow"),
+        pygame.Color("aquamarine1"),
+        pygame.Color("pink"),
+        pygame.Color("green"),
+        pygame.Color("orange"),
     ]
     DRONE_RADIUS = 8
 
@@ -27,10 +26,10 @@ class Screen:
 
     def clear_last_frame(self) -> None:
         """Clear the last frame, recover it with a black screen"""
-        self.screen.fill(Colors.BLACK.value)
+        self.screen.fill(pygame.Color("black"))
 
     def draw_text(self, text: str, x: int, y: int,
-                  color: tuple[int, int, int] = Colors.LIGHT_GREY.value,
+                  color: tuple[int, int, int] = pygame.Color("gray44"),
                   font: Any = None) -> None:
         """Draw text into the simulation"""
         if font is None:
