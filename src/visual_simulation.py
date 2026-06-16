@@ -59,7 +59,10 @@ class VisualSimulation:
         return [hub.coordinates for hub in self.drone_map.hub.values()]
 
     def _to_screen(self, coord: tuple[int, int]) -> tuple[int, int]:
-        """Print"""
+        """
+        Convert map coordinates to screen pixel coordinates with padding
+        and scaling.
+        """
         pad = 80
 
         dx = self.max_x - self.min_x or 1
@@ -75,6 +78,7 @@ class VisualSimulation:
         return sx, sy
 
     def _dist(self, p1: tuple[float, float], p2: tuple[float, float]) -> float:
+        """Return the Euclidean distance between two points."""
         return math.hypot(p1[0] - p2[0], p1[1] - p2[1])
 
     def _dist_point_to_segment(self, new_point: tuple[int, int],
@@ -249,8 +253,12 @@ class VisualSimulation:
                                          mid[1] - label.get_height() // 2))
 
     def _interpolate_drone_pos(
-         self, solution: dict[int, tuple[str, tuple[int, int]]], turn: float
-         ) -> tuple[int, int] | None:
+     self, solution: dict[int, tuple[str, tuple[int, int]]], turn: float
+     ) -> tuple[int, int] | None:
+        """Interpolate a drone's screen position between two known turns.
+
+        Returns None if the solution has no recorded turns.
+        """
         turns = sorted(solution.keys())
         if not turns:
             return None
