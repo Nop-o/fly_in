@@ -36,7 +36,8 @@ class Drone(BaseModel):
         if turn not in self.solution.keys():
             if (turn + 1 in self.solution.keys() and
                turn - 1 in self.solution.keys()):
-                print(f"D{self.id}-{self.solution[turn - 1][0]}-{self.solution[turn + 1][0]} ", end="")
+                print(f"D{self.id}-{self.solution[turn - 1][0]}-"
+                      f"{self.solution[turn + 1][0]} ", end="")
             return
         if self.solution[turn][0] == self.last_position:
             return
