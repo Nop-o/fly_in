@@ -93,9 +93,10 @@ class VisualSimulation:
 
     def _drones_at_hub(self, hub_name: str, turn: int) -> list[int]:
         """Return list of drone indices present at hub_name at given turn."""
-        result = []
+        result: list[int] = []
+
         for i, solution in enumerate(self.drone_solutions):
-            if (turn not in solution and
+            if (turn not in solution and turn + 1 not in solution and
                hub_name == self.drone_map.end_hub.name):
                 result.append(i)
             elif turn in solution and solution[turn][0] == hub_name:
@@ -104,7 +105,8 @@ class VisualSimulation:
 
     def _drones_on_connection(self, connection: Any, turn: int) -> list[int]:
         """Return drone indices currently on this connection at given turn."""
-        result = []
+        result: list[int] = []
+
         for i, solution in enumerate(self.drone_solutions):
             turns = sorted(solution.keys())
             for j in range(len(turns) - 1):
