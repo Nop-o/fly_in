@@ -1,4 +1,10 @@
-from pydantic import BaseModel, Field, ValidationError
+try:
+    from pydantic import BaseModel, Field, ValidationError
+except ImportError:
+    import sys
+    print("Import error: pydantic is not installed, run the "
+          "'make install' command first")
+    sys.exit()
 
 
 class Connection(BaseModel):

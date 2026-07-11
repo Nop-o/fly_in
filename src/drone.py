@@ -1,8 +1,15 @@
 from __future__ import annotations
 from .dijkstra import Dijkstra
 from .hub import Hub
-from pydantic import BaseModel, Field
 from typing import Annotated
+
+try:
+    from pydantic import BaseModel, Field
+except ImportError:
+    import sys
+    print("Import error: pydantic is not installed, run the "
+          "'make install' command first")
+    sys.exit()
 
 
 Coordinate = Annotated[int, Field(ge=0, le=200)]

@@ -5,7 +5,7 @@ import sys
 def main() -> None:
     try:
         from pydantic import ValidationError
-    except ModuleNotFoundError:
+    except ImportError:
         print("Import error: pydantic is not installed, run the "
               "'make install' command first")
         return
@@ -39,10 +39,6 @@ def main() -> None:
         return
     except ValueError as e:
         print(e)
-        return
-    except ModuleNotFoundError:
-        print("Import error: pygame is not installed, run the "
-              "'make install' command first")
         return
 
 

@@ -1,6 +1,19 @@
-import pygame
-from pydantic import (BaseModel, Field, ValidationError,
-                      model_validator, ConfigDict)
+try:
+    import pygame
+except ImportError:
+    import sys
+    print("Import error: pygame is not installed, run the "
+          "'make install' command first")
+    sys.exit()
+try:
+    from pydantic import (BaseModel, Field, ValidationError,
+                          model_validator, ConfigDict)
+except ImportError:
+    import sys
+    print("Import error: pydantic is not installed, run the "
+          "'make install' command first")
+    sys.exit()
+
 from typing import Any, Annotated
 from .zone_type import ZoneType
 

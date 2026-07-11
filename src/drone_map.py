@@ -1,9 +1,22 @@
-from pydantic import BaseModel, Field, ValidationError, model_validator
+try:
+    from pydantic import BaseModel, Field, ValidationError, model_validator
+except ImportError:
+    import sys
+    print("Import error: pydantic is not installed, run the "
+          "'make install' command first")
+    sys.exit()
+try:
+    import pygame
+except ImportError:
+    import sys
+    print("Import error: pygame is not installed, run the "
+          "'make install' command first")
+    sys.exit()
+
 from .drone import Drone
 from .hub import Hub
 from .connection import Connection
 from .zone_type import ZoneType
-import pygame
 
 
 class DroneMap(BaseModel):

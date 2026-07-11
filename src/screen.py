@@ -1,4 +1,11 @@
-import pygame
+try:
+    import pygame
+except ImportError:
+    import sys
+    print("Import error: pygame is not installed, run the "
+          "'make install' command first")
+    sys.exit()
+
 from typing import Any
 
 
