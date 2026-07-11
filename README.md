@@ -5,25 +5,28 @@
 ## Table of Contents
 - [Fly-in](#fly-in)
 	- [Table of Contents](#table-of-contents)
-    - [Description](#description)
-    - [Instructions](#instructions)
-        - [All available commands](#all-available-commands)
-        - [Running a specific map](#running-a-specific-map)
-    - [Algorithm](#algorithm)
-    - [Visual Representation](#visual-representation)
-    - [Parsing](#parsing)
-    - [Map components](#map-components)
-        - [Hub](#hub)
-        - [Connection](#connection)
-        - [Zone type](#zone-type)
-        - [Colors](#colors)
-    - [Maps](#maps)
-        - [Easy](#easy)
-        - [Medium](#medium)
-        - [Hard](#hard)
-        - [Challenger](#challenger)
-    - [Initial project structure](#initial-project-structure)
-    - [Resources](#resources)
+	- [Description](#description)
+	- [Instructions](#instructions)
+		- [All available commands](#all-available-commands)
+		- [Running a specific map](#running-a-specific-map)
+	- [Algorithm](#algorithm)
+	- [Visual Representation](#visual-representation)
+		- [Controls](#controls)
+		- [Features](#features)
+	- [Parsing](#parsing)
+	- [Map components](#map-components)
+		- [Hub](#hub)
+		- [Connection](#connection)
+		- [Zone type](#zone-type)
+		- [Colors](#colors)
+	- [Maps](#maps)
+		- [Easy](#easy)
+		- [Medium](#medium)
+		- [Hard](#hard)
+		- [Challenger](#challenger)
+	- [Initial project structure](#initial-project-structure)
+	- [Resources](#resources)
+		- [AI usage](#ai-usage)
 
 ---
 
@@ -194,7 +197,7 @@ A default map path can be overridden with `make run MAP=<path>`. Available maps:
 
 ## Initial project structure
 
-![Project structure](image.png)
+![Project structure](fly_in_visual.png)
 
 ---
 
@@ -207,6 +210,6 @@ A default map path can be overridden with `make run MAP=<path>`. Available maps:
 
 ### AI usage
 
-Claude (Anthropic) was used throughout this project for:
+AI was used throughout this project for:
 - **Code review**: spotting unused variables, dead code, and inconsistent type annotations.
-- **README**: writing and structuring this document based on project content.
+- **README**: correcting spelling mistakes and structuring this document.
